@@ -1,0 +1,1695 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Gachon campus — two controllers</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; background: #000; overflow: hidden; font-family: Roboto, "Segoe UI", sans-serif; color: #fff; }
+    button { color: #fff; border: 0; border-radius: 12px; padding: 10px 14px; font: inherit; cursor: pointer; }
+    body.touring #hud, body.touring #status, body:has(#route.open) #status { display: none; }
+    body > button { left: auto !important; right: 16px !important; bottom: 16px !important; transform: none !important; }
+    body.touring > button { bottom: auto !important; top: 16px !important; }
+    #hud { position: fixed; left: 16px; bottom: 16px; z-index: 2; display: flex; gap: 8px; align-items: center; max-width: calc(100% - 180px); flex-wrap: wrap; }
+    #line { display: none; }
+    #line:not(:empty) { display: block; flex: 1 1 220px; background: rgba(12,16,22,.82); border-radius: 14px; padding: 10px 12px; }
+    #hud button { background: rgba(12,16,22,.82); border: 1px solid rgba(255,255,255,.16); }
+    #status { position: fixed; top: 16px; left: 16px; z-index: 2; max-width: min(420px, calc(100% - 32px)); color: #f4f7fb; background: rgba(12,16,22,.72); border-radius: 14px; padding: 8px 12px; font-size: 14px; line-height: 1.4; }
+    #lab, #tour, #route { display: none; }
+    #lab.open, #tour.open, #route.open { display: block; }
+    #lab, #tour { position: fixed; left: 16px; bottom: 16px; top: auto; z-index: 4; width: min(420px, calc(100vw - 32px)); max-height: min(78vh, 680px); overflow: auto; padding: 16px; border-radius: 22px; background: rgba(12,16,22,.88); box-shadow: 0 16px 40px rgba(0,0,0,.35); }
+    #tour-head, #lab-head { display: flex; align-items: center; gap: 12px; }
+    #speaker, #tour-speaker { width: 64px; height: 64px; border-radius: 50%; overflow: hidden; border: 2px solid rgba(255,255,255,.85); flex: none; }
+    #speaker img, #tour-speaker img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    #speaker.talking, #tour-speaker.talking { animation: talk 0.7s ease-in-out infinite; }
+    @keyframes talk { 0% { box-shadow: 0 0 0 0 rgba(255,255,255,.55); } 100% { box-shadow: 0 0 0 14px rgba(255,255,255,0); } }
+    #tour-meta { flex: 1; min-width: 0; }
+    #tour-progress { font-size: 18px; font-weight: 700; line-height: 1.35; }
+    #tour-score, #tour-score:empty { margin: 0; }
+    #tour-score:not(:empty) { margin-top: 2px; color: #d6ecff; font-size: 14px; }
+    #tour-again { flex: none; background: transparent; color: #f0d7a2; border: 1px solid rgba(240,215,162,.5); padding: 8px 10px; font-size: 14px; }
+    #ko, #sub, #tour-ko, #tour-text { background: transparent; padding: 0; }
+    #ko, #tour-ko { margin-top: 14px; font-size: 18px; line-height: 1.45; }
+    #sub, #tour-text { margin-top: 6px; color: #d6ecff; font-size: 15px; line-height: 1.45; }
+    #mic, #tour-mic, #tour-next, #tour-home { width: 100%; margin-top: 12px; min-height: 48px; font-size: 17px; }
+    #mic, #tour-mic, #start-tour { background: #0e6b4f; }
+    #tour-next { background: #0e6b4f; }
+    #tour-home, #open-route { background: #5a3e16; }
+    #heard, #tour-heard { color: #f4f7fb; margin-top: 8px; font-size: 14px; }
+    #tour-heard:empty, #heard:empty { display: none; }
+    #choices, #tour-choices { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+    #choices button, #tour-choices button { text-align: left; min-height: 48px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14); }
+    #tour-choices button:disabled, #choices button:disabled { opacity: .55; }
+    #route { position: fixed; right: 16px; top: 16px; z-index: 4; width: min(340px, calc(100vw - 32px)); max-height: calc(100vh - 32px); overflow: auto; padding: 12px; border-radius: 22px; background: rgba(12,16,22,.9); box-shadow: 0 16px 40px rgba(0,0,0,.35); }
+    #route .route { margin-top: 8px; padding: 8px; border-radius: 16px; background: rgba(255,255,255,.04); }
+    #route .route.on { background: rgba(230,168,23,.16); }
+    #route .card { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 8px; background: transparent; padding: 8px; }
+    #route .card.on { background: #e6a817; color: #1a1204; }
+    #route .name { font-size: 17px; font-weight: 700; }
+    #route .count { font-size: 13px; opacity: .8; }
+    #route .stops { margin: 4px 8px 2px; color: #d6ecff; font-size: 13px; line-height: 1.4; }
+    #route .voices { display: flex; gap: 6px; margin: 4px 8px 0; }
+    #route .voices button { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14); }
+    #route .voices button.on-f { background: #c2185b; border-color: transparent; }
+    #route .voices button.on-m { background: #1565c0; border-color: transparent; }
+    #route .quiz { width: 100%; margin-top: 10px; background: transparent; border: 1px solid rgba(255,255,255,.2); color: #f0d7a2; }
+  </style>
+</head>
+<body>
+  <div id="status">Đang tải ảnh campus…</div>
+  <div id="hud">
+    <div id="line"></div>
+    <button id="speak" type="button">Tay trái: nói</button>
+    <button id="back" type="button">Tay trái: về</button>
+    <button id="open-lab" type="button">Lab</button>
+    <button id="open-route" type="button">Lộ trình</button>
+    <button id="start-tour" type="button">Bắt đầu</button>
+  </div>
+  <div id="tour">
+    <div id="tour-head">
+      <div id="tour-speaker"><img src="img/hanbok.jpg" alt="Người mặc hanbok"></div>
+      <div id="tour-meta">
+        <div id="tour-progress"></div>
+        <div id="tour-score"></div>
+      </div>
+      <button id="tour-again" type="button" hidden>Làm lại</button>
+    </div>
+    <div id="tour-ko"></div>
+    <div id="tour-text"></div>
+    <div id="tour-choices"></div>
+    <button id="tour-mic" type="button" hidden>Nói đáp án</button>
+    <button id="tour-next" type="button" hidden>Tiếp</button>
+    <button id="tour-home" type="button" hidden>Về</button>
+    <div id="tour-heard"></div>
+  </div>
+  <div id="route"><div id="route-list"></div></div>
+  <div id="lab">
+    <div id="speaker"><img src="img/hanbok.jpg" alt="Người mặc hanbok"></div>
+    <div id="ko"></div>
+    <div id="sub"></div>
+    <button id="mic" type="button">Nói tiếng Việt</button>
+    <div id="heard"></div>
+    <div id="choices"></div>
+  </div>
+  <script type="module">
+    import * as THREE from "https://unpkg.com/three@0.170.0/build/three.module.js"
+    import { VRButton } from "https://unpkg.com/three@0.170.0/examples/jsm/webxr/VRButton.js"
+
+    const LINE = document.querySelector("#line")
+    const STATUS = document.querySelector("#status")
+
+    const PLACES = {
+      overview: {
+        sky: "01",
+        title: "Toàn trường",
+        ko: "여기는 대한민국 성남시에 있는 가천대학교 글로벌 캠퍼스예요. 가천 베트남은 반도체 기술을 가르치며, FPT 대학교와 가천대학교가 함께 운영해요. 오늘은 호치민 레꽝딘 485번지 캠퍼스에 있고, 다른 캠퍼스는 하노이에 있어요.",
+        line: "Đây là Global Campus của Đại học Gachon, ở thành phố Seongnam, Hàn Quốc. Gachon Vietnam đào tạo Công nghệ bán dẫn, liên kết Đại học FPT và Đại học Gachon. Hôm nay mình đang ở cơ sở TP.HCM, 485 Lê Quang Định. Cơ sở kia ở Hà Nội.",
+        audio: "audio/tour-overview.wav",
+        pitch: -18
+      },
+      vision: {
+        sky: "03",
+        title: "Vision Tower",
+        ko: "이 건물은 분당선 가천대역과 바로 연결돼요. 과정은 베트남에서 2년, 한국에서 2년이고, 그다음엔 이 캠퍼스에서 공부해요.",
+        line: "Tòa này nối thẳng với ga tàu Gachon University, tuyến Bundang. Lộ trình chương trình là 2 năm ở Việt Nam, 2 năm ở Hàn Quốc, học tại campus này.",
+        audio: "audio/tour-vision.wav",
+        pitch: -10
+      },
+      fountain: {
+        sky: "04",
+        title: "Đài phun",
+        ko: "역 옆에 분수가 있는 광장이에요. 학사 학위는 한국 가천대학교가 줘요.",
+        line: "Quảng trường có đài phun, cạnh nhà ga. Bằng cử nhân do Đại học Gachon, Hàn Quốc cấp.",
+        audio: "audio/tour-fountain.wav",
+        pitch: 0
+      },
+      ai: {
+        sky: "01",
+        title: "Tòa AI",
+        ko: "이 건물은 투어에 사진이 한 장뿐이라 지도 위에서 봐요. 과정에는 두 방향이 있어요. 반도체 공학, 그리고 시스템 반도체 설계예요.",
+        line: "Tour chỉ có một ảnh tòa này, nên đứng trên bản đồ mà xem. Chương trình có hai hướng: Kỹ thuật bán dẫn, và Thiết kế hệ thống bán dẫn.",
+        audio: "audio/tour-ai.wav",
+        pitch: -18,
+        flat: true
+      },
+      maker: {
+        sky: "02",
+        title: "Maker Space",
+        ko: "여기는 메이커 스페이스예요. 직접 물건을 만드는 곳이에요.",
+        line: "Đây là Maker Space, chỗ tự làm đồ.",
+        audio: "audio/tour-maker.wav",
+        pitch: 0,
+        yaw: 0
+      }
+    }
+
+    const MORE_SCENES = [
+      ["05", "OIS Center", "OIS 센터", "Trung tâm OIS"],
+      ["06", "Electronic Information Library", "전자정보도서관", "Thư viện thông tin điện tử"],
+      ["07", "Student Service Center", "학생서비스센터", "Trung tâm dịch vụ sinh viên"],
+      ["08", "Stardom Plaza", "스타덤 광장", "Quảng trường Stardom"],
+      ["09", "Infinity Sculpture", "무한 조형물", "Tượng vô cực"],
+      ["10", "Gachon Hall", "가천관", "Gachon Hall"],
+      ["11", "Pinwheel Hill", "바람개비 언덕", "Đồi chong chóng"],
+      ["12", "Central Library", "중앙도서관", "Thư viện trung tâm"],
+      ["13", "Residence Hall Overview", "기숙사 전경", "Toàn cảnh ký túc xá"],
+      ["14", "Student Residence Hall", "학생 기숙사", "Ký túc xá sinh viên"],
+      ["15", "Medical Campus Overview", "메디컬 캠퍼스 전경", "Toàn cảnh cơ sở y"],
+      ["16", "Baengbong", "백봉 스터디 카페", "Baengbong, phòng học kiểu quán"],
+      ["18", "Nursing Practice Lab", "간호실습실", "Phòng thực hành điều dưỡng"],
+      ["19", "Pinwheel Hill", "바람개비 언덕", "Đồi chong chóng"],
+      ["20", "Lee Gil Ya Cancer and Diabetes Institute", "이길여 암·당뇨 연구원", "Viện ung thư và tiểu đường Lee Gil Ya"],
+      ["21", "Neuroscience Research Institute", "뇌과학연구원", "Viện nghiên cứu khoa học thần kinh"],
+      ["22", "College of Medicine", "의과대학", "Trường Y"],
+      ["23", "Gachon Creative Factory Overview", "가천 크리에이티브 팩토리 전경", "Toàn cảnh Gachon Creative Factory"],
+      ["24", "Gachon Creative Factory Main Building", "가천 크리에이티브 팩토리 본관", "Tòa chính Gachon Creative Factory"]
+    ]
+    for (const [id, title, ko, line] of MORE_SCENES) {
+      PLACES[id] = { sky: id, title, ko, line, pitch: 0, yaw: 0 }
+    }
+
+    const PINS = [
+      { id: "vision", ath: 19.88, atv: 18.944, color: 0x2f6fed, label: "Vision Tower" },
+      { id: "fountain", ath: 46.05, atv: 37.454, color: 0x1aa6b8, label: "Fountain" },
+      { id: "ai", ath: -22.17, atv: 0.301, color: 0x3c9a4e, label: "AI Building" }
+    ]
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true })
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+    renderer.setSize(window.innerWidth, window.innerHeight)
+    renderer.xr.enabled = true
+    renderer.outputColorSpace = THREE.SRGBColorSpace
+    document.body.appendChild(renderer.domElement)
+    document.body.appendChild(VRButton.createButton(renderer))
+
+    const scene = new THREE.Scene()
+    const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.05, 1000)
+    const rig = new THREE.Group()
+    rig.add(camera)
+    scene.add(rig)
+
+    const loader = new THREE.TextureLoader()
+    const skies = {}
+    const pinGroup = new THREE.Group()
+    scene.add(pinGroup)
+    const pinMeshes = []
+    let placeId = "overview"
+    let aiPlane = null
+    let caption = null
+    let captionTimer = 0
+    let vrBoard = null
+    let resultFx = null
+    let vrKo = null
+    let vrVi = null
+    const vrChoices = []
+    const pressed = { leftTrigger: false, leftY: false, rightTrigger: false }
+    let drag = null
+
+    function pinVector(athDeg, atvDeg, radius) {
+      const ath = THREE.MathUtils.degToRad(-athDeg)
+      const atv = THREE.MathUtils.degToRad(atvDeg)
+      const cosAtv = Math.cos(atv)
+      return new THREE.Vector3(
+        Math.sin(ath) * cosAtv * radius,
+        -Math.sin(atv) * radius,
+        -Math.cos(ath) * cosAtv * radius
+      )
+    }
+
+    function labelTexture(text, color) {
+      const canvas = document.createElement("canvas")
+      canvas.width = 512
+      canvas.height = 128
+      const ctx = canvas.getContext("2d")
+      ctx.fillStyle = color
+      ctx.fillRect(0, 0, 512, 128)
+      ctx.fillStyle = "#ffffff"
+      ctx.font = "bold 54px Arial"
+      ctx.textAlign = "center"
+      ctx.textBaseline = "middle"
+      ctx.fillText(text, 256, 64)
+      const texture = new THREE.CanvasTexture(canvas)
+      texture.colorSpace = THREE.SRGBColorSpace
+      return texture
+    }
+
+    function loadTexture(url) {
+      return new Promise((resolve, reject) => {
+        loader.load(url, (texture) => {
+          texture.colorSpace = THREE.SRGBColorSpace
+          resolve(texture)
+        }, undefined, reject)
+      })
+    }
+
+    function makeSky(textures) {
+      const order = ["r", "l", "u", "d", "b", "f"]
+      const materials = order.map((face) => new THREE.MeshBasicMaterial({
+        map: textures[face],
+        side: THREE.BackSide,
+        depthWrite: false
+      }))
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(400, 400, 400), materials)
+      mesh.frustumCulled = false
+      return mesh
+    }
+
+    const skyJobs = {}
+    let skyToken = 0
+
+    function ensureSky(id) {
+      if (skies[id]) return Promise.resolve()
+      if (!skyJobs[id]) {
+        skyJobs[id] = loadOneSky(id).finally(() => {
+          delete skyJobs[id]
+        })
+      }
+      return skyJobs[id]
+    }
+
+    async function loadOneSky(id) {
+      const faces = {}
+      for (const face of ["f", "b", "l", "r", "u", "d"]) {
+        const texture = await loadTexture(`./pano/${id}_${face}.jpg`)
+        texture.wrapS = THREE.RepeatWrapping
+        texture.repeat.x = -1
+        faces[face] = texture
+      }
+      const mesh = makeSky(faces)
+      mesh.visible = false
+      skies[id] = mesh
+      scene.add(mesh)
+    }
+
+    function releaseSkies(keep) {
+      for (const id of Object.keys(skies)) {
+        if (keep.has(id)) continue
+        const mesh = skies[id]
+        scene.remove(mesh)
+        const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
+        for (const material of materials) {
+          if (material.map) material.map.dispose()
+          material.dispose()
+        }
+        mesh.geometry.dispose()
+        delete skies[id]
+      }
+    }
+
+    function showSky(id) {
+      for (const sky of Object.values(skies)) sky.visible = false
+      skies[id].visible = true
+    }
+
+    function makePins() {
+      for (const pin of PINS) {
+        const group = new THREE.Group()
+        group.position.copy(pinVector(pin.ath, pin.atv, 160))
+        const sphere = new THREE.Mesh(
+          new THREE.SphereGeometry(18, 20, 16),
+          new THREE.MeshBasicMaterial({ color: pin.color })
+        )
+        sphere.userData.place = pin.id
+        const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+          map: labelTexture(pin.label, "#" + pin.color.toString(16).padStart(6, "0")),
+          depthTest: false
+        }))
+        sprite.position.y = 16
+        sprite.scale.set(36, 9, 1)
+        group.add(sphere)
+        group.add(sprite)
+        pinGroup.add(group)
+        pinMeshes.push(sphere)
+      }
+    }
+
+    function makeAiPlane(texture) {
+      const aspect = texture.image.width / texture.image.height
+      const height = 1.15
+      aiPlane = new THREE.Mesh(
+        new THREE.PlaneGeometry(height * aspect, height),
+        new THREE.MeshBasicMaterial({ map: texture, transparent: true })
+      )
+      aiPlane.position.set(0, 0, -2.1)
+      aiPlane.visible = false
+      camera.add(aiPlane)
+    }
+
+    function makeCaption() {
+      const canvas = document.createElement("canvas")
+      canvas.width = 1024
+      canvas.height = 256
+      const texture = new THREE.CanvasTexture(canvas)
+      texture.colorSpace = THREE.SRGBColorSpace
+      caption = new THREE.Mesh(
+        new THREE.PlaneGeometry(1.7, 0.42),
+        new THREE.MeshBasicMaterial({ map: texture, transparent: true, depthTest: false })
+      )
+      caption.position.set(0, -0.55, -1.7)
+      caption.visible = false
+      caption.userData.canvas = canvas
+      caption.userData.texture = texture
+      camera.add(caption)
+    }
+
+    function paintCaption(text) {
+      const canvas = caption.userData.canvas
+      const ctx = canvas.getContext("2d")
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      ctx.fillStyle = "rgba(0,0,0,0.72)"
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+      ctx.fillStyle = "#ffffff"
+      ctx.font = "42px Arial"
+      ctx.textAlign = "center"
+      ctx.textBaseline = "middle"
+      const words = text.split(" ")
+      const lines = ["", ""]
+      let row = 0
+      for (const word of words) {
+        const trial = (lines[row] + " " + word).trim()
+        if (row === 0 && ctx.measureText(trial).width > 960) row = 1
+        lines[row] = (lines[row] + " " + word).trim()
+      }
+      ctx.fillText(lines[0], 512, lines[1] ? 96 : 128)
+      if (lines[1]) ctx.fillText(lines[1], 512, 160)
+      caption.userData.texture.needsUpdate = true
+      caption.visible = true
+      captionTimer = 12
+    }
+
+    function wrapLines(ctx, text, maxWidth, maxLines) {
+      const words = text.split(/\s+/).filter(Boolean)
+      const lines = []
+      let row = ""
+      for (const word of words) {
+        const trial = (row + " " + word).trim()
+        if (row && ctx.measureText(trial).width > maxWidth && lines.length < maxLines - 1) {
+          lines.push(row)
+          row = word
+        } else row = trial
+      }
+      if (row) lines.push(row)
+      return lines.slice(0, maxLines)
+    }
+
+    function makeTextCard(width, height, canvasWidth, canvasHeight, font, maxLines) {
+      const canvas = document.createElement("canvas")
+      canvas.width = canvasWidth
+      canvas.height = canvasHeight
+      const texture = new THREE.CanvasTexture(canvas)
+      texture.colorSpace = THREE.SRGBColorSpace
+      const mesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(width, height),
+        new THREE.MeshBasicMaterial({ map: texture, transparent: true, depthTest: false })
+      )
+      mesh.userData.canvas = canvas
+      mesh.userData.texture = texture
+      mesh.userData.font = font
+      mesh.userData.maxLines = maxLines
+      mesh.visible = false
+      return mesh
+    }
+
+    function fillRoundRect(ctx, x, y, width, height, radius) {
+      const r = Math.min(radius, width / 2, height / 2)
+      ctx.beginPath()
+      ctx.moveTo(x + r, y)
+      ctx.arcTo(x + width, y, x + width, y + height, r)
+      ctx.arcTo(x + width, y + height, x, y + height, r)
+      ctx.arcTo(x, y + height, x, y, r)
+      ctx.arcTo(x, y, x + width, y, r)
+      ctx.closePath()
+      ctx.fill()
+    }
+
+    function paintCard(mesh, text, color) {
+      const canvas = mesh.userData.canvas
+      const ctx = canvas.getContext("2d")
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      if (!text) {
+        mesh.visible = false
+        return
+      }
+      ctx.fillStyle = "rgba(16,18,24,0.9)"
+      fillRoundRect(ctx, 8, 8, canvas.width - 16, canvas.height - 16, 28)
+      ctx.fillStyle = color
+      ctx.font = mesh.userData.font
+      ctx.textAlign = "center"
+      ctx.textBaseline = "middle"
+      const lines = wrapLines(ctx, text, canvas.width - 48, mesh.userData.maxLines)
+      const gap = 44
+      const start = canvas.height / 2 - ((lines.length - 1) * gap) / 2
+      for (let i = 0; i < lines.length; i += 1) ctx.fillText(lines[i], canvas.width / 2, start + i * gap)
+      mesh.userData.texture.needsUpdate = true
+      mesh.visible = true
+    }
+
+    function makeVrBoard() {
+      vrBoard = new THREE.Group()
+      vrBoard.position.set(0, -0.58, -1.45)
+      vrBoard.visible = false
+      vrKo = makeTextCard(1.55, 0.28, 1024, 180, "600 34px Roboto, sans-serif", 3)
+      vrKo.position.y = 0.34
+      vrVi = makeTextCard(1.55, 0.22, 1024, 140, "30px Roboto, sans-serif", 2)
+      vrVi.position.y = 0.08
+      vrBoard.add(vrKo)
+      vrBoard.add(vrVi)
+      for (let i = 0; i < 3; i += 1) {
+        const mesh = makeTextCard(0.5, 0.2, 512, 160, "26px Roboto, sans-serif", 3)
+        mesh.position.set(-0.54 + i * 0.54, -0.2, 0)
+        vrBoard.add(mesh)
+        vrChoices.push(mesh)
+      }
+      camera.add(vrBoard)
+    }
+
+    function makeResultMark(hit) {
+      const group = new THREE.Group()
+      const disc = new THREE.Mesh(
+        new THREE.CircleGeometry(0.22, 32),
+        new THREE.MeshBasicMaterial({
+          color: hit ? 0x148a45 : 0xb42318,
+          transparent: true,
+          side: THREE.DoubleSide
+        })
+      )
+      disc.position.z = -0.04
+      const material = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true })
+      group.add(disc)
+      if (hit) {
+        const left = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.16, 0.04), material)
+        left.position.set(-0.05, -0.03, 0)
+        left.rotation.z = 0.7
+        const right = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.28, 0.04), material)
+        right.position.set(0.06, 0.03, 0)
+        right.rotation.z = -0.95
+        group.add(left, right)
+      } else {
+        const slash = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.3, 0.04), material)
+        slash.rotation.z = 0.78
+        const back = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.3, 0.04), material)
+        back.rotation.z = -0.78
+        group.add(slash, back)
+      }
+      group.userData.material = material
+      group.userData.disc = disc.material
+      return group
+    }
+
+    function makeResultFx() {
+      resultFx = new THREE.Group()
+      resultFx.position.set(0.28, 0.2, -1.6)
+      resultFx.visible = false
+      const ok = makeResultMark(true)
+      const bad = makeResultMark(false)
+      const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(0.42, 0.025, 10, 40),
+        new THREE.MeshBasicMaterial({ color: 0xffd15c, transparent: true })
+      )
+      const sparks = []
+      const sparkGeo = new THREE.SphereGeometry(0.035, 8, 8)
+      for (let i = 0; i < 36; i += 1) {
+        const mesh = new THREE.Mesh(sparkGeo, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true }))
+        mesh.visible = false
+        resultFx.add(mesh)
+        sparks.push(mesh)
+      }
+      const actor = new THREE.Sprite(new THREE.SpriteMaterial({
+        transparent: true,
+        alphaTest: 0.3,
+        depthWrite: false
+      }))
+      actor.visible = false
+      resultFx.add(ok, bad, ring, actor)
+      resultFx.userData.ok = ok
+      resultFx.userData.bad = bad
+      resultFx.userData.ring = ring
+      resultFx.userData.sparks = sparks
+      resultFx.userData.actor = actor
+      camera.add(resultFx)
+    }
+
+    function fitActor(texture, height) {
+      const actor = resultFx.userData.actor
+      const aspect = texture.image.width / texture.image.height
+      actor.material.map = texture
+      actor.scale.set(height * aspect, height, 1)
+      actor.visible = true
+    }
+
+    function playResultFx(hit) {
+      if (!resultFx) return
+      resultFx.visible = true
+      resultFx.userData.hit = hit
+      resultFx.userData.start = performance.now()
+      resultFx.userData.ok.visible = hit
+      resultFx.userData.bad.visible = !hit
+      resultFx.userData.ring.visible = hit
+      const actor = resultFx.userData.actor
+      if (actor && mascotMaps.stand) fitActor(hit ? mascotMaps.pointLeft : mascotMaps.stand, hit ? 0.62 : 0.5)
+      const sparks = resultFx.userData.sparks
+      for (let i = 0; i < sparks.length; i += 1) {
+        const mesh = sparks[i]
+        const spin = (i / sparks.length) * Math.PI * 2
+        const lift = hit ? (i % 5) * 0.18 - 0.36 : -0.2 - (i % 6) * 0.08
+        const depth = -0.15 - (i % 4) * 0.18
+        mesh.userData.dir = new THREE.Vector3(Math.cos(spin), lift, depth).normalize()
+        mesh.position.set(0, 0, 0)
+        mesh.material.color.set(hit ? (i % 2 ? 0x37d67a : 0xffd15c) : 0xff5a5a)
+        mesh.visible = true
+      }
+    }
+
+    function updateResultFx() {
+      if (!resultFx || !resultFx.visible) return
+      const elapsed = (performance.now() - resultFx.userData.start) / 1600
+      const mark = resultFx.userData.hit ? resultFx.userData.ok : resultFx.userData.bad
+      const pop = Math.min(elapsed / 0.16, 1)
+      mark.scale.setScalar(0.35 + pop * 0.85)
+      if (elapsed < 1) {
+        mark.position.y = resultFx.userData.hit ? Math.sin(elapsed * Math.PI) * 0.14 : Math.sin(elapsed * 36) * 0.04
+      }
+      mark.userData.material.opacity = 1
+      const ring = resultFx.userData.ring
+      const fade = elapsed >= 1 ? 0 : (elapsed > 0.65 ? 1 - (elapsed - 0.65) / 0.35 : 1)
+      if (ring.visible) {
+        ring.scale.setScalar(0.35 + Math.min(elapsed, 1) * 2.4)
+        ring.material.opacity = fade * 0.9
+        if (elapsed >= 1) ring.visible = false
+      }
+      const actor = resultFx.userData.actor
+      if (actor && actor.visible) {
+        const hop = resultFx.userData.hit ? Math.abs(Math.sin(Math.min(elapsed, 1) * Math.PI * 2)) * 0.14 : 0
+        const shake = resultFx.userData.hit ? 0 : Math.sin(elapsed * 30) * 0.04
+        actor.position.set(0.4 + shake, -0.02 + hop, 0.08)
+      }
+      const travel = resultFx.userData.hit ? Math.min(elapsed, 1) * 1.25 : Math.min(elapsed, 1) * 0.7
+      for (const mesh of resultFx.userData.sparks) {
+        if (elapsed >= 1) {
+          mesh.visible = false
+          continue
+        }
+        mesh.position.copy(mesh.userData.dir).multiplyScalar(travel)
+        mesh.scale.setScalar(Math.max(0.2, 1 - elapsed))
+        mesh.material.opacity = fade
+      }
+    }
+
+    function syncVrBoard() {
+      if (!vrBoard) return
+      const open = document.querySelector("#tour").classList.contains("open")
+      vrBoard.visible = renderer.xr.isPresenting && open
+      if (!vrBoard.visible) return
+      const ko = document.querySelector("#tour-ko").textContent
+      const vi = document.querySelector("#tour-text").textContent
+      const buttons = [...document.querySelectorAll("#tour-choices button")]
+      const key = ko + "\n" + vi + "\n" + buttons.map((button) => button.textContent).join("|")
+      if (vrBoard.userData.key === key) return
+      vrBoard.userData.key = key
+      paintCard(vrKo, ko, "#ffffff")
+      paintCard(vrVi, vi, "#d6ecff")
+      for (let i = 0; i < vrChoices.length; i += 1) {
+        const button = buttons[i] || null
+        vrChoices[i].userData.button = button
+        paintCard(vrChoices[i], button ? button.textContent : "", "#ffffff")
+      }
+    }
+
+    const benches = {
+      id: "benches",
+      label: "bàn làm việc",
+      ko: "안녕하세요. 뭐가 궁금해요? 여기서 뭘 하는지, 어려운지, 나중에 무슨 일을 하는지 물어보세요.",
+      vi: "Xin chào. Bạn muốn hỏi gì? Cứ hỏi chỗ này làm gì, có khó không, hay sau này làm việc gì.",
+      audio: "audio/hello.wav",
+      linkKo: "그 말은 앞의 작업대랑 더 맞아요.",
+      linkVi: "Câu đó hợp với những bàn phía trước hơn.",
+      linkAudio: "audio/link-benches.wav",
+      answerKo: "여기서는 이 작업대에서 직접 물건을 만들고 있어요.",
+      answerVi: "Ở đây các bạn đang tự làm đồ trên những bàn này.",
+      answerAudio: "audio/answer-benches.wav",
+      yaw: 0,
+      terms: [["tu lam", 3], ["lam do", 3]]
+    }
+    const lamp = {
+      id: "lamp",
+      label: "đèn bàn",
+      ask: "Ở đây các bạn làm gì?",
+      ko: "여기서는 직접 물건을 만들어요. 벽의 테이블 램프는 단계대로 만들어야 해요.",
+      vi: "Ở đây các bạn tự làm đồ. Cái đèn bàn trên tường phải làm theo từng bước.",
+      audio: "audio/work.wav",
+      linkKo: "그 말은 벽의 테이블 램프랑 더 맞아요.",
+      linkVi: "Câu đó hợp với cái đèn bàn trên tường hơn.",
+      linkAudio: "audio/link-lamp.wav",
+      answerKo: "벽의 테이블 램프를 단계대로 만들고 있어요.",
+      answerVi: "Các bạn đang làm cái đèn bàn trên tường, theo từng bước.",
+      answerAudio: "audio/answer-lamp.wav",
+      yaw: -1.28,
+      pitch: 0.25,
+      terms: [["den", 4], ["tung buoc", 3]]
+    }
+    const tools = {
+      id: "tools",
+      label: "bảng dụng cụ",
+      ask: "Có khó không?",
+      ko: "처음에는 어려워요. 선생님이 옆에서 알려 줘요. 앞에는 금속 작업대와 공구판이 있어요.",
+      vi: "Lúc đầu thì khó, thầy cô đứng cạnh chỉ. Trước mặt là bàn kim loại và bảng dụng cụ.",
+      audio: "audio/hard.wav",
+      linkKo: "그 말은 공구판이랑 더 맞아요.",
+      linkVi: "Câu đó hợp với bảng dụng cụ hơn.",
+      linkAudio: "audio/link-tools.wav",
+      answerKo: "금속 작업대에서 공구를 쓰는 연습을 하고 있어요.",
+      answerVi: "Các bạn đang tập dùng dụng cụ trên bàn kim loại.",
+      answerAudio: "audio/answer-tools.wav",
+      yaw: 0.9,
+      terms: [["dung cu", 4], ["kim loai", 4], ["kho", 3]]
+    }
+    const green = {
+      id: "green",
+      label: "bàn xanh",
+      ask: "Sau này làm công việc gì?",
+      ko: "조립하고 만드는 일을 할 수 있어요. 이 초록 작업대가 조립하는 자리예요.",
+      vi: "Có thể làm việc ráp và làm đồ. Bàn xanh này là chỗ ráp.",
+      audio: "audio/job.wav",
+      linkKo: "그 말은 초록 작업대랑 더 맞아요.",
+      linkVi: "Câu đó hợp với bàn xanh hơn.",
+      linkAudio: "audio/link-green.wav",
+      answerKo: "초록 작업대에서 부품을 조립하고 있어요.",
+      answerVi: "Các bạn đang ráp đồ trên bàn xanh.",
+      answerAudio: "audio/answer-green.wav",
+      yaw: Math.PI - 0.45,
+      pitch: -0.28,
+      side: 18,
+      drop: 8,
+      distance: 90,
+      pointLeft: true,
+      terms: [["sau nay", 4], ["cong viec", 4], ["lam viec", 4], ["rap", 3], ["ban xanh", 4]]
+    }
+    const LAB = {
+      hello: benches,
+      replies: [lamp, tools, green],
+      scenes: [benches, lamp, tools, green]
+    }
+    const clips = new Map()
+    let playing = null
+    let currentLabId = "benches"
+    let speakToken = 0
+    let mascot = null
+    let mascotRun = null
+    const mascotMaps = { stand: null, point: null }
+
+    function viewPoint(yaw, pitch, distance, side, drop) {
+      const cp = Math.cos(pitch)
+      const dir = new THREE.Vector3(-cp * Math.sin(yaw), Math.sin(pitch), -cp * Math.cos(yaw))
+      const right = new THREE.Vector3().crossVectors(dir, new THREE.Vector3(0, 1, 0))
+      if (right.lengthSq() < 0.0001) right.set(1, 0, 0)
+      right.normalize()
+      const point = dir.multiplyScalar(distance).addScaledVector(right, side)
+      point.y += drop
+      return point
+    }
+
+    function mascotScale(texture) {
+      const aspect = texture.image.width / texture.image.height
+      mascot.scale.set(36 * aspect, 36, 1)
+    }
+
+    function runMascot(yaw, pitch, spot) {
+      if (!mascot) return
+      const side = spot && spot.side != null ? spot.side : -22
+      const drop = spot && spot.drop != null ? spot.drop : -12
+      const distance = spot && spot.distance != null ? spot.distance : 112
+      const from = mascot.visible ? mascot.position.clone() : viewPoint(yaw, pitch, 46, side - 8, drop - 6)
+      const to = viewPoint(yaw, pitch, distance, side, drop)
+      mascot.visible = true
+      mascot.material.map = mascotMaps.stand
+      mascotScale(mascotMaps.stand)
+      mascot.position.copy(from)
+      const point = spot && spot.pointLeft ? mascotMaps.pointLeft : mascotMaps.point
+      mascotRun = { from, to, start: performance.now(), point }
+    }
+
+    function updateMascot() {
+      if (!mascotRun || !mascot || !mascot.visible) return
+      const t = Math.min((performance.now() - mascotRun.start) / 900, 1)
+      const eased = t * t * (3 - 2 * t)
+      mascot.position.lerpVectors(mascotRun.from, mascotRun.to, eased)
+      if (t < 1) mascot.position.y += Math.abs(Math.sin(t * Math.PI * 4)) * 5
+      else if (mascot.material.map !== mascotRun.point) {
+        mascot.material.map = mascotRun.point
+        mascotScale(mascotRun.point)
+      }
+    }
+
+    function fold(text) {
+      return text.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "").replace(/đ/g, "d")
+    }
+
+    function hasWord(text, word) {
+      return (" " + text + " ").includes(" " + word + " ")
+    }
+
+    function scoreScene(heard, scene) {
+      let score = 0
+      for (const [term, weight] of scene.terms) {
+        const hit = term.includes(" ") ? heard.includes(term) : hasWord(heard, term)
+        if (hit) score += weight
+      }
+      return score
+    }
+
+    function bestOtherScene(text) {
+      const heard = fold(text)
+      let best = null
+      for (const scene of LAB.scenes) {
+        if (scene.id === currentLabId) continue
+        const score = scoreScene(heard, scene)
+        if (score > 0 && (!best || score > best.score)) best = { scene, score }
+      }
+      return best
+    }
+
+    function nextScene(id) {
+      const index = LAB.scenes.findIndex((scene) => scene.id === id)
+      return LAB.scenes[(index + 1) % LAB.scenes.length]
+    }
+
+    function handleUtterance(text) {
+      const heardBox = document.querySelector("#heard")
+      const other = bestOtherScene(text)
+      if (other) {
+        const scene = other.scene
+        currentLabId = scene.id
+        heardBox.textContent = "Bạn nói: " + text + " → " + scene.label
+        speakKorean(scene.linkKo + " " + scene.ko, scene.linkVi + " " + scene.vi, [scene.linkAudio, scene.audio], scene.yaw, scene.pitch, scene)
+        return
+      }
+      const current = LAB.scenes.find((scene) => scene.id === currentLabId)
+      const next = nextScene(currentLabId)
+      heardBox.textContent = "Bạn nói: " + text
+      speakKorean(current.answerKo, current.answerVi, current.answerAudio, current.yaw, current.pitch, current, () => {
+        currentLabId = next.id
+        speakKorean(next.ko, next.vi, next.audio, next.yaw, next.pitch, next)
+      })
+    }
+
+    function listenVietnamese() {
+      const Rec = window.SpeechRecognition || window.webkitSpeechRecognition
+      const heard = document.querySelector("#heard")
+      const button = document.querySelector("#mic")
+      if (!Rec) {
+        heard.textContent = "Trình duyệt này không có nhận giọng."
+        return
+      }
+      const rec = new Rec()
+      rec.lang = "vi-VN"
+      rec.interimResults = false
+      rec.maxAlternatives = 1
+      button.textContent = "Đang nghe…"
+      rec.onresult = (event) => {
+        handleUtterance(event.results[0][0].transcript)
+      }
+      rec.onerror = (event) => {
+        heard.textContent = "Micro: " + event.error
+      }
+      rec.onend = () => {
+        button.textContent = "Nói tiếng Việt"
+      }
+      rec.start()
+    }
+
+    function primeClip(url) {
+      if (!clips.has(url)) {
+        clips.set(url, fetch(url).then((response) => response.blob()).then((blob) => new Audio(URL.createObjectURL(blob))))
+      }
+      return clips.get(url)
+    }
+
+    function primeLabAudio() {
+      for (const scene of LAB.scenes) {
+        primeClip(scene.audio)
+        primeClip(scene.linkAudio)
+        primeClip(scene.answerAudio)
+      }
+    }
+
+    function primeTourAudio() {
+      const urls = ["audio/right.wav", "audio/wrong.wav", "audio/choose.wav"]
+      for (let n = 0; n < 5; n += 1) urls.push("audio/score-" + n + ".wav")
+      for (const letter of ["a", "b", "c"]) urls.push("audio/letter-" + letter + ".wav")
+      for (let n = 1; n <= 4; n += 1) urls.push("audio/num-" + n + ".wav")
+      for (const route of ROUTES) {
+        for (const id of route.stops) if (PLACES[id].audio) urls.push(PLACES[id].audio)
+      }
+      for (const group of QUIZ_GROUPS) {
+        for (const item of group) {
+          urls.push(item.qAudio)
+          if (item.explainAudio) urls.push(item.explainAudio)
+          for (const option of item.options) urls.push(option.audio)
+        }
+      }
+      for (const url of new Set(urls)) primeClip(url)
+    }
+
+    function speakFiles(files, done) {
+      const token = ++speakToken
+      let index = 0
+      const list = files.map(voiced)
+      const speakers = [document.querySelector("#speaker"), document.querySelector("#tour-speaker")]
+      const setTalking = (on) => {
+        for (const node of speakers) if (node) node.classList.toggle("talking", on)
+      }
+      const playNext = () => {
+        if (token !== speakToken) return
+        if (index >= list.length) {
+          setTalking(false)
+          if (done) done()
+          return
+        }
+        const url = list[index]
+        index += 1
+        primeClip(url).then((audio) => {
+          if (token !== speakToken) return
+          if (playing) {
+            playing.onended = null
+            playing.pause()
+          }
+          playing = audio
+          audio.currentTime = 0
+          audio.onended = playNext
+          audio.play().catch(() => playNext())
+        }).catch(() => playNext())
+      }
+      setTalking(true)
+      playNext()
+    }
+
+    function speakKorean(korean, vietnamese, file, yaw, pitch, spot, done) {
+      document.querySelector("#ko").textContent = korean
+      document.querySelector("#sub").textContent = vietnamese
+      LINE.textContent = ""
+      if (caption) caption.visible = false
+      const lookYaw = yaw || 0
+      const lookPitch = pitch || 0
+      if (!renderer.xr.isPresenting) {
+        rig.rotation.y = lookYaw
+        camera.rotation.x = lookPitch
+      }
+      runMascot(lookYaw, lookPitch, spot)
+      speakFiles(Array.isArray(file) ? file : [file], done)
+    }
+
+    async function startLab() {
+      const panel = document.querySelector("#lab")
+      const choices = document.querySelector("#choices")
+      panel.classList.add("open")
+      await goTo("maker")
+      choices.replaceChildren()
+      for (const reply of LAB.replies) {
+        const button = document.createElement("button")
+        button.type = "button"
+        button.textContent = reply.ask
+        button.addEventListener("click", () => {
+          currentLabId = reply.id
+          speakKorean(reply.ko, reply.vi, reply.audio, reply.yaw, reply.pitch, reply)
+        })
+        choices.appendChild(button)
+      }
+      currentLabId = "benches"
+      speakKorean(LAB.hello.ko, LAB.hello.vi, LAB.hello.audio, LAB.hello.yaw, LAB.hello.pitch)
+    }
+
+
+    function lookAtPlace(id) {
+      const place = PLACES[id]
+      const pitch = THREE.MathUtils.degToRad(place.pitch)
+      if (renderer.xr.isPresenting) {
+        rig.rotation.set(0, 0, 0)
+        camera.rotation.set(0, 0, 0)
+        return
+      }
+      rig.rotation.y = place.yaw || 0
+      camera.rotation.x = pitch
+    }
+
+    async function goTo(id) {
+      const token = ++skyToken
+      const place = PLACES[id]
+      await ensureSky(place.sky)
+      if (token !== skyToken) return
+      releaseSkies(new Set([place.sky, "01"]))
+      placeId = id
+      showSky(place.sky)
+      pinGroup.visible = id === "overview" || id === "ai"
+      if (aiPlane) aiPlane.visible = id === "ai"
+      if (id !== "maker") {
+        document.querySelector("#lab").classList.remove("open")
+        if (mascot) mascot.visible = false
+        mascotRun = null
+      }
+      lookAtPlace(id)
+      STATUS.textContent = place.title
+    }
+
+    function selectPlace(id) {
+      stopGuided()
+      goTo(id)
+    }
+
+    function sayCurrent() {
+      const place = PLACES[placeId]
+      if (!place.audio) return
+      LINE.textContent = place.line
+      if (caption) caption.visible = false
+      speakFiles([place.audio])
+    }
+
+    function returnOverview() {
+      stopGuided()
+      goTo("overview")
+    }
+
+    function rising(next, key) {
+      const was = pressed[key]
+      pressed[key] = next
+      return next && !was
+    }
+
+    function rayFrom(controller) {
+      const origin = new THREE.Vector3()
+      const direction = new THREE.Vector3(0, 0, -1)
+      const quaternion = new THREE.Quaternion()
+      controller.getWorldPosition(origin)
+      controller.getWorldQuaternion(quaternion)
+      direction.applyQuaternion(quaternion)
+      return new THREE.Raycaster(origin, direction)
+    }
+
+    function hitPin(raycaster) {
+      const hits = raycaster.intersectObjects(pinMeshes, false)
+      if (!hits.length || !pinGroup.visible) return null
+      return hits[0].object.userData.place
+    }
+
+    function hitChoice(raycaster) {
+      if (!vrBoard || !vrBoard.visible) return null
+      const hits = raycaster.intersectObjects(vrChoices.filter((mesh) => mesh.visible), false)
+      if (!hits.length) return null
+      return hits[0].object.userData.button
+    }
+
+    function readHand(controller) {
+      const gamepad = controller.userData.gamepad
+      if (!gamepad) return
+      const trigger = !!(gamepad.buttons[0] && gamepad.buttons[0].pressed)
+      const secondary = !!(gamepad.buttons[5] && gamepad.buttons[5].pressed)
+      if (controller.userData.handedness === "right") {
+        if (rising(trigger, "rightTrigger")) {
+          const ray = rayFrom(controller)
+          const button = hitChoice(ray)
+          if (button && !button.disabled) button.click()
+          else {
+            const id = hitPin(ray)
+            if (id) selectPlace(id)
+          }
+        }
+      }
+      if (controller.userData.handedness === "left") {
+        if (rising(trigger, "leftTrigger")) {
+          const next = document.querySelector("#tour-next")
+          const touring = document.querySelector("#tour").classList.contains("open")
+          const home = document.querySelector("#tour-home")
+          if (touring && next && !next.hidden) next.click()
+          else if (touring && home && !home.hidden) home.click()
+          else if (!touring) sayCurrent()
+        }
+        if (rising(secondary, "leftY")) returnOverview()
+      }
+    }
+
+    function addController(index) {
+      const controller = renderer.xr.getController(index)
+      controller.addEventListener("connected", (event) => {
+        controller.userData.gamepad = event.data.gamepad
+        controller.userData.handedness = event.data.handedness
+      })
+      const line = new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(0, 0, -4)]),
+        new THREE.LineBasicMaterial({ color: 0xffffff })
+      )
+      controller.add(line)
+      scene.add(controller)
+    }
+
+    function onPointerDown(event) {
+      drag = { x: event.clientX, y: event.clientY, moved: false }
+    }
+
+    function onPointerMove(event) {
+      if (!drag || renderer.xr.isPresenting) return
+      const dx = event.clientX - drag.x
+      const dy = event.clientY - drag.y
+      if (Math.abs(dx) + Math.abs(dy) > 4) drag.moved = true
+      drag.x = event.clientX
+      drag.y = event.clientY
+      rig.rotation.y -= dx * 0.005
+      camera.rotation.x = THREE.MathUtils.clamp(camera.rotation.x - dy * 0.005, -1.1, 1.1)
+    }
+
+    function onPointerUp(event) {
+      if (!drag || drag.moved || renderer.xr.isPresenting) {
+        drag = null
+        return
+      }
+      const rect = renderer.domElement.getBoundingClientRect()
+      const ndc = new THREE.Vector2(
+        ((event.clientX - rect.left) / rect.width) * 2 - 1,
+        -((event.clientY - rect.top) / rect.height) * 2 + 1
+      )
+      const raycaster = new THREE.Raycaster()
+      raycaster.setFromCamera(ndc, camera)
+      const id = hitPin(raycaster)
+      if (id) selectPlace(id)
+      drag = null
+    }
+
+    function onKey(event) {
+      if (event.code === "KeyF") sayCurrent()
+      if (event.code === "KeyY") returnOverview()
+    }
+
+    function onResize() {
+      camera.aspect = window.innerWidth / window.innerHeight
+      camera.updateProjectionMatrix()
+      renderer.setSize(window.innerWidth, window.innerHeight)
+    }
+
+    function frame(time, frameXr) {
+      if (caption && caption.visible) {
+        captionTimer -= 1 / 72
+        if (captionTimer <= 0) caption.visible = false
+      }
+      updateMascot()
+      syncVrBoard()
+      updateResultFx()
+      if (frameXr) {
+        for (const controller of [renderer.xr.getController(0), renderer.xr.getController(1)]) {
+          readHand(controller)
+        }
+      }
+      renderer.render(scene, camera)
+    }
+
+    renderer.domElement.addEventListener("pointerdown", onPointerDown)
+    window.addEventListener("pointermove", onPointerMove)
+    window.addEventListener("pointerup", onPointerUp)
+    window.addEventListener("keydown", onKey)
+    window.addEventListener("resize", onResize)
+    const ROUTES = [
+      {
+        name: "Sân trường",
+        stops: ["overview", "vision", "08", "09", "11", "19"],
+        quiz: [0, 1, 2, 4, 5],
+        voice: "f"
+      },
+      {
+        name: "Chỗ học",
+        stops: ["overview", "maker", "ai", "05", "06", "07", "10", "12"],
+        quiz: [2, 3, 7, 8, 9],
+        voice: "f"
+      },
+      {
+        name: "Ký túc",
+        stops: ["overview", "fountain", "13", "14", "16"],
+        quiz: [1, 3, 6, 9],
+        voice: "f"
+      },
+      {
+        name: "Y và xưởng",
+        stops: ["vision", "fountain", "maker", "15", "18", "20", "21", "22", "23", "24"],
+        quiz: [4, 5, 6, 8],
+        voice: "f"
+      }
+    ]
+    let routeIndex = 0
+    let voiceMale = false
+
+    function voiced(url) {
+      if (!voiceMale || typeof url !== "string" || !url.startsWith("audio/") || url.startsWith("audio/m/")) return url
+      return "audio/m/" + url.slice("audio/".length)
+    }
+
+    function setSpeaker(male) {
+      const img = document.querySelector("#tour-speaker img")
+      img.src = male ? "img/hanbok-male.jpg" : "img/hanbok.jpg"
+      img.alt = male ? "Người nam mặc hanbok" : "Người nữ mặc hanbok"
+    }
+    const SCORE_KO = [
+      "4문제 중 0문제를 맞혔어요.",
+      "4문제 중 1문제를 맞혔어요.",
+      "4문제 중 2문제를 맞혔어요.",
+      "4문제 중 3문제를 맞혔어요.",
+      "4문제 중 4문제를 맞혔어요."
+    ]
+    const QUIZ_GROUPS = [
+      [
+        { q: "Campus vừa xem ở nước nào?", qKo: "방금 본 캠퍼스는 어느 나라예요?", qAudio: "audio/q-country.wav", explainKo: "이 캠퍼스는 대한민국에 있어요.", explain: "Campus này ở Hàn Quốc.", explainAudio: "audio/why-country.wav", options: [
+          { vi: "Hàn Quốc", ko: "대한민국", audio: "audio/opt-korea.wav", say: ["han quoc"] },
+          { vi: "Việt Nam", ko: "베트남", audio: "audio/opt-vietnam.wav", say: ["viet nam"] },
+          { vi: "Đài Loan", ko: "대만", audio: "audio/opt-taiwan.wav", say: ["dai loan"] }
+        ] }
+      ],
+      [
+        { q: "Campus đó ở thành phố nào?", qKo: "그 캠퍼스는 어느 도시예요?", qAudio: "audio/q-city.wav", explainKo: "캠퍼스는 성남시에 있어요.", explain: "Campus ở thành phố Seongnam.", explainAudio: "audio/why-city.wav", options: [
+          { vi: "Seongnam", ko: "성남", audio: "audio/opt-seongnam.wav", say: ["seongnam", "song nam"] },
+          { vi: "Seoul", ko: "서울", audio: "audio/opt-seoul.wav", say: ["seoul", "so ul"] },
+          { vi: "Busan", ko: "부산", audio: "audio/opt-busan.wav", say: ["busan", "bu san"] }
+        ] }
+      ],
+      [
+        { q: "Gachon Vietnam đào tạo ngành gì?", qKo: "가천 베트남은 무엇을 가르치나요?", qAudio: "audio/q-major.wav", explainKo: "가천 베트남은 반도체 기술을 가르쳐요.", explain: "Gachon Vietnam dạy Công nghệ bán dẫn.", explainAudio: "audio/why-major.wav", options: [
+          { vi: "Công nghệ bán dẫn", ko: "반도체 기술", audio: "audio/opt-semi.wav", say: ["ban dan"] },
+          { vi: "Quản trị khách sạn", ko: "호텔 경영", audio: "audio/opt-hotel.wav", say: ["khach san"] },
+          { vi: "Thiết kế thời trang", ko: "패션 디자인", audio: "audio/opt-fashion.wav", say: ["thoi trang"] }
+        ] }
+      ],
+      [
+        { q: "Chương trình liên kết với trường nào?", qKo: "이 과정은 어느 학교와 연계되나요?", qAudio: "audio/q-partner.wav", explainKo: "가천 베트남은 FPT 대학교와 가천대학교가 함께 운영해요.", explain: "Gachon Vietnam do Đại học FPT và Đại học Gachon cùng vận hành.", explainAudio: "audio/why-partner.wav", options: [
+          { vi: "Đại học Gachon", ko: "가천대학교", audio: "audio/opt-gachon.wav", say: ["gachon"] },
+          { vi: "Một trường ở Đài Loan", ko: "대만의 한 대학", audio: "audio/opt-taiwan-uni.wav", say: ["dai loan"] },
+          { vi: "Một trường ở Nhật", ko: "일본의 한 대학", audio: "audio/opt-japan-uni.wav", say: ["nhat ban", "o nhat"] }
+        ] }
+      ],
+      [
+        { q: "Lộ trình học là gì?", qKo: "학업 과정은 어떻게 되나요?", qAudio: "audio/q-path.wav", explainKo: "베트남에서 2년, 한국에서 2년이고, 그다음엔 이 캠퍼스에서 공부해요.", explain: "2 năm ở Việt Nam, 2 năm ở Hàn Quốc, học tại campus này.", explainAudio: "audio/why-path.wav", options: [
+          { vi: "2 năm Việt Nam, 2 năm Hàn Quốc", ko: "베트남에서 2년, 한국에서 2년", audio: "audio/opt-two-two.wav", say: ["2 nam viet nam", "hai nam o viet nam", "hai nam viet nam"] },
+          { vi: "4 năm chỉ ở Việt Nam", ko: "4년 모두 베트남", audio: "audio/opt-four-vn.wav", say: ["4 nam chi o viet nam", "bon nam chi o viet nam"] },
+          { vi: "4 năm chỉ ở Hàn Quốc", ko: "4년 모두 한국", audio: "audio/opt-four-kr.wav", say: ["4 nam chi o han quoc", "bon nam chi o han quoc"] }
+        ] }
+      ],
+      [
+        { q: "Vision Tower nối thẳng với gì?", qKo: "비전 타워는 무엇과 바로 연결되나요?", qAudio: "audio/q-link.wav", explainKo: "비전 타워는 기차역과 바로 연결돼요.", explain: "Vision Tower nối thẳng với ga tàu.", explainAudio: "audio/why-link.wav", options: [
+          { vi: "Ga tàu", ko: "기차역", audio: "audio/opt-train.wav", say: ["ga tau"] },
+          { vi: "Sân bay", ko: "공항", audio: "audio/opt-airport.wav", say: ["san bay"] },
+          { vi: "Bến tàu biển", ko: "항구", audio: "audio/opt-port.wav", say: ["tau bien"] }
+        ] },
+        { q: "Ga đó tên gì?", qKo: "그 역 이름은 무엇인가요?", qAudio: "audio/q-station.wav", explainKo: "그 역은 가천대역이에요.", explain: "Ga đó là ga Gachon University.", explainAudio: "audio/why-station.wav", options: [
+          { vi: "Ga Gachon University", ko: "가천대역", audio: "audio/opt-gachon-st.wav", say: ["gachon university", "ga gachon"] },
+          { vi: "Ga Seoul", ko: "서울역", audio: "audio/opt-seoul-st.wav", say: ["ga seoul"] },
+          { vi: "Ga Busan", ko: "부산역", audio: "audio/opt-busan-st.wav", say: ["ga busan"] }
+        ] },
+        { q: "Ga đó thuộc tuyến nào?", qKo: "그 역은 어느 노선인가요?", qAudio: "audio/q-line.wav", explainKo: "가천대역은 분당선이에요.", explain: "Ga Gachon University thuộc tuyến Bundang.", explainAudio: "audio/why-line.wav", options: [
+          { vi: "Bundang", ko: "분당선", audio: "audio/opt-bundang.wav", say: ["bundang"] },
+          { vi: "Tuyến sân bay", ko: "공항철도", audio: "audio/opt-airport-line.wav", say: ["san bay"] },
+          { vi: "Tuyến vòng Seoul", ko: "서울 순환선", audio: "audio/opt-seoul-loop.wav", say: ["vong seoul"] }
+        ] }
+      ],
+      [
+        { q: "Bằng cử nhân do đâu cấp?", qKo: "학사 학위는 어디서 주나요?", qAudio: "audio/q-degree.wav", explainKo: "학사 학위는 한국 가천대학교가 줘요.", explain: "Bằng cử nhân do Đại học Gachon, Hàn Quốc cấp.", explainAudio: "audio/why-degree.wav", options: [
+          { vi: "Đại học Gachon, Hàn Quốc", ko: "한국 가천대학교", audio: "audio/opt-degree.wav", say: ["gachon", "han quoc"] },
+          { vi: "Chỉ cấp tại cơ sở TP.HCM", ko: "호치민 캠퍼스에서만", audio: "audio/opt-hcm-only.wav", say: ["tp.hcm", "tp hcm", "sai gon"] },
+          { vi: "Một trường Đài Loan", ko: "대만의 한 대학", audio: "audio/opt-taiwan-uni.wav", say: ["dai loan"] }
+        ] }
+      ],
+      [
+        { q: "Hướng nào có trong chương trình?", qKo: "과정에 있는 방향은 무엇인가요?", qAudio: "audio/q-track.wav", explainKo: "과정에는 반도체 공학이 있어요.", explain: "Trong chương trình có Kỹ thuật bán dẫn.", explainAudio: "audio/why-eng.wav", options: [
+          { vi: "Kỹ thuật bán dẫn", ko: "반도체 공학", audio: "audio/opt-eng.wav", say: ["ky thuat ban dan", "ban dan"] },
+          { vi: "Hướng dẫn du lịch", ko: "관광 안내", audio: "audio/opt-tourguide.wav", say: ["du lich"] },
+          { vi: "Kế toán", ko: "회계", audio: "audio/opt-accounting.wav", say: ["ke toan"] }
+        ] },
+        { q: "Hướng nào có trong chương trình?", qKo: "과정에 있는 방향은 무엇인가요?", qAudio: "audio/q-track.wav", explainKo: "과정에는 시스템 반도체 설계가 있어요.", explain: "Trong chương trình có Thiết kế hệ thống bán dẫn.", explainAudio: "audio/why-system.wav", options: [
+          { vi: "Thiết kế hệ thống bán dẫn", ko: "시스템 반도체 설계", audio: "audio/opt-system.wav", say: ["he thong ban dan", "thiet ke he thong"] },
+          { vi: "Thiết kế thời trang", ko: "패션 디자인", audio: "audio/opt-fashion.wav", say: ["thoi trang"] },
+          { vi: "Ngôn ngữ Anh thương mại", ko: "상업 영어", audio: "audio/opt-biz-eng.wav", say: ["thuong mai"] }
+        ] }
+      ],
+      [
+        { q: "Maker Space là chỗ để làm gì?", qKo: "메이커 스페이스는 무엇을 하는 곳인가요?", qAudio: "audio/q-maker.wav", explainKo: "메이커 스페이스는 직접 물건을 만드는 곳이에요.", explain: "Maker Space là chỗ tự làm đồ.", explainAudio: "audio/why-maker.wav", options: [
+          { vi: "Tự làm đồ", ko: "직접 물건을 만들어요", audio: "audio/opt-make.wav", say: ["tu lam do", "lam do"] },
+          { vi: "Phòng thi", ko: "시험장", audio: "audio/opt-exam.wav", say: ["phong thi"] },
+          { vi: "Căng tin", ko: "식당", audio: "audio/opt-canteen.wav", say: ["cang tin"] }
+        ] }
+      ],
+      [
+        { q: "Buổi này đang ở cơ sở nào?", qKo: "오늘은 어느 캠퍼스에 있나요?", qAudio: "audio/q-here.wav", explainKo: "오늘은 호치민 레꽝딘 485번지 캠퍼스에 있어요.", explain: "Hôm nay đang ở cơ sở TP.HCM, 485 Lê Quang Định.", explainAudio: "audio/why-here.wav", options: [
+          { vi: "TP.HCM, 485 Lê Quang Định", ko: "호치민, 레꽝딘 485번지", audio: "audio/opt-hcm.wav", say: ["le quang dinh", "tp.hcm", "tp hcm"] },
+          { vi: "Hà Nội", ko: "하노이", audio: "audio/opt-hanoi.wav", say: ["ha noi"] },
+          { vi: "Seongnam", ko: "성남", audio: "audio/opt-seongnam.wav", say: ["seongnam"] }
+        ] },
+        { q: "Cơ sở Gachon Vietnam còn lại ở Việt Nam nằm ở đâu?", qKo: "베트남에 있는 다른 캠퍼스는 어디인가요?", qAudio: "audio/q-other.wav", explainKo: "다른 캠퍼스는 하노이에 있어요.", explain: "Cơ sở kia ở Hà Nội.", explainAudio: "audio/why-other.wav", options: [
+          { vi: "Hà Nội", ko: "하노이", audio: "audio/opt-hanoi.wav", say: ["ha noi"] },
+          { vi: "Đà Nẵng", ko: "다낭", audio: "audio/opt-danang.wav", say: ["da nang"] },
+          { vi: "Cần Thơ", ko: "껀터", audio: "audio/opt-cantho.wav", say: ["can tho"] }
+        ] }
+      ]
+    ]
+    let tourToken = 0
+    let tourSkip = null
+    let quizBusy = false
+
+    function shuffle(list) {
+      const copy = list.slice()
+      for (let i = copy.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1))
+        const hold = copy[i]
+        copy[i] = copy[j]
+        copy[j] = hold
+      }
+      return copy
+    }
+
+    function tourBox() {
+      return {
+        root: document.querySelector("#tour"),
+        progress: document.querySelector("#tour-progress"),
+        ko: document.querySelector("#tour-ko"),
+        text: document.querySelector("#tour-text"),
+        score: document.querySelector("#tour-score"),
+        choices: document.querySelector("#tour-choices"),
+        mic: document.querySelector("#tour-mic"),
+        next: document.querySelector("#tour-next"),
+        home: document.querySelector("#tour-home"),
+        again: document.querySelector("#tour-again"),
+        heard: document.querySelector("#tour-heard")
+      }
+    }
+
+    function setTouring(on) {
+      document.body.classList.toggle("touring", on)
+    }
+
+    function stopGuided() {
+      const skip = tourSkip
+      tourToken += 1
+      speakToken += 1
+      tourSkip = null
+      quizBusy = false
+      if (skip) skip()
+      if (playing) {
+        playing.onended = null
+        playing.pause()
+      }
+      const speaker = document.querySelector("#tour-speaker")
+      if (speaker) speaker.classList.remove("talking")
+      if (resultFx) resultFx.visible = false
+      voiceMale = false
+      setSpeaker(false)
+      const box = tourBox()
+      box.root.classList.remove("open")
+      box.ko.textContent = ""
+      box.text.textContent = ""
+      box.progress.textContent = ""
+      box.choices.replaceChildren()
+      box.mic.hidden = true
+      box.next.hidden = true
+      box.home.hidden = true
+      box.again.hidden = true
+      box.heard.textContent = ""
+      box.score.textContent = ""
+      setTouring(false)
+      document.querySelector("#start-tour").textContent = "Bắt đầu"
+    }
+
+    function speakClips(files, token) {
+      return new Promise((resolve) => {
+        const earlier = tourSkip
+        let settled = false
+        const finish = () => {
+          if (settled) return
+          settled = true
+          resolve()
+        }
+        tourSkip = () => {
+          speakToken += 1
+          if (playing) {
+            playing.onended = null
+            playing.pause()
+          }
+          const speaker = document.querySelector("#tour-speaker")
+          if (speaker) speaker.classList.remove("talking")
+          finish()
+        }
+        if (earlier) earlier()
+        if (token !== tourToken) {
+          finish()
+          return
+        }
+        speakFiles(files, finish)
+      })
+    }
+
+    function pickQuiz() {
+      const groups = ROUTES[routeIndex].quiz.map((index) => QUIZ_GROUPS[index])
+      return shuffle(groups).slice(0, 4).map((group) => group[Math.floor(Math.random() * group.length)])
+    }
+
+    function deal(item) {
+      const letters = ["A", "B", "C"]
+      return shuffle(item.options.map((option, index) => ({
+        text: option.vi,
+        ko: option.ko,
+        audio: option.audio,
+        say: option.say,
+        correct: index === 0
+      }))).map((choice, index) => ({
+        letter: letters[index],
+        text: choice.text,
+        ko: choice.ko,
+        audio: choice.audio,
+        say: choice.say,
+        correct: choice.correct
+      }))
+    }
+
+    function letterFrom(text) {
+      const heard = fold(text).replace(/[.,!?]/g, " ").replace(/\s+/g, " ").trim()
+      const stripped = heard.replace(/^(dap an|phuong an|chon|cau)\s+/, "")
+      if (stripped === "a" || stripped === "b" || stripped === "c") return stripped
+      return ""
+    }
+
+    function gradeSpeech(text, choices) {
+      const spoken = letterFrom(text)
+      if (spoken) return spoken.toUpperCase()
+      const heard = fold(text)
+      let best = null
+      for (const choice of choices) {
+        const phrases = [fold(choice.text), ...choice.say]
+        for (const phrase of phrases) {
+          if (phrase && heard.includes(phrase) && (!best || phrase.length > best.length)) best = { letter: choice.letter, length: phrase.length }
+        }
+      }
+      return best ? best.letter : ""
+    }
+
+    function showChoices(round, token) {
+      if (resultFx) resultFx.visible = false
+      const box = tourBox()
+      box.choices.replaceChildren()
+      box.mic.hidden = false
+      box.next.hidden = true
+      for (const choice of round.choices) {
+        const button = document.createElement("button")
+        button.type = "button"
+        button.textContent = choice.letter + ". " + choice.ko + " — " + choice.text
+        button.addEventListener("click", () => gradeRound(round, choice.letter, token))
+        box.choices.appendChild(button)
+      }
+      box.mic.onclick = () => listenAnswer(round, token)
+    }
+
+    function listenAnswer(round, token) {
+      const Rec = window.SpeechRecognition || window.webkitSpeechRecognition
+      const box = tourBox()
+      if (!Rec) {
+        box.heard.textContent = "Trình duyệt này không có nhận giọng. Bấm A, B hoặc C."
+        return
+      }
+      const rec = new Rec()
+      rec.lang = "vi-VN"
+      rec.interimResults = false
+      rec.maxAlternatives = 1
+      box.mic.textContent = "Đang nghe…"
+      rec.onresult = (event) => {
+        if (token !== tourToken) return
+        const text = event.results[0][0].transcript
+        const letter = gradeSpeech(text, round.choices)
+        box.heard.textContent = letter ? "Bạn nói: " + text : "Bạn nói: " + text + ". Chọn A, B hoặc C."
+        if (!letter) speakFiles(["audio/choose.wav"])
+        if (letter) gradeRound(round, letter, token)
+      }
+      rec.onerror = (event) => {
+        box.heard.textContent = "Micro: " + event.error
+      }
+      rec.onend = () => {
+        box.mic.textContent = "Nói đáp án"
+      }
+      rec.start()
+    }
+
+    async function gradeRound(round, letter, token) {
+      if (quizBusy || token !== tourToken) return
+      quizBusy = true
+      const box = tourBox()
+      const picked = round.choices.find((choice) => choice.letter === letter)
+      const hit = !!(picked && picked.correct)
+      if (hit) round.score = 1
+      playResultFx(hit)
+      box.heard.textContent = hit ? "맞아요. Đúng." : "정답은 " + round.correct.ko + ". Đáp án là " + round.correct.text + "."
+      for (const button of box.choices.querySelectorAll("button")) button.disabled = true
+      box.mic.hidden = true
+      box.next.hidden = false
+      let moved = false
+      const moveOn = () => {
+        if (moved || token !== tourToken) return
+        moved = true
+        if (tourSkip) tourSkip()
+        quizBusy = false
+        round.done(hit)
+      }
+      const shown = performance.now()
+      box.next.onclick = moveOn
+      await speakClips(hit ? ["audio/right.wav"] : ["audio/wrong.wav", round.correct.audio], token)
+      if (moved || token !== tourToken) return
+      if (round.explainAudio) {
+        box.ko.textContent = round.explainKo
+        box.text.textContent = round.explain
+        await speakClips([round.explainAudio], token)
+      }
+      if (moved || token !== tourToken) return
+      const remain = 1200 - (performance.now() - shown)
+      if (remain > 0) await new Promise((resolve) => setTimeout(resolve, remain))
+      moveOn()
+    }
+
+    async function askRounds(token) {
+      const box = tourBox()
+      box.progress.textContent = ROUTES[routeIndex].name
+      const items = pickQuiz()
+      let correct = 0
+      const recap = []
+      for (let index = 0; index < items.length; index += 1) {
+        if (token !== tourToken) return
+        const item = items[index]
+        const choices = deal(item)
+        const round = {
+          choices,
+          correct: choices.find((choice) => choice.correct),
+          score: 0,
+          explainKo: item.explainKo,
+          explain: item.explain,
+          explainAudio: item.explainAudio,
+          done: null
+        }
+        box.score.textContent = "Câu " + (index + 1) + "/4. Đúng " + correct + "."
+        box.ko.textContent = item.qKo
+        box.text.textContent = item.q
+        box.heard.textContent = ""
+        showChoices(round, token)
+        const files = ["audio/num-" + (index + 1) + ".wav", item.qAudio]
+        for (const choice of choices) files.push("audio/letter-" + choice.letter.toLowerCase() + ".wav", choice.audio)
+        const answered = new Promise((resolve) => {
+          round.done = resolve
+        })
+        await speakClips(files, token)
+        if (token !== tourToken) return
+        const hit = await answered
+        if (token !== tourToken) return
+        if (hit) correct += 1
+        recap.push((hit ? "Đúng. " : "Chưa đúng. ") + item.q)
+      }
+      if (token !== tourToken) return
+      box.choices.replaceChildren()
+      box.mic.hidden = true
+      box.next.hidden = true
+      box.home.hidden = false
+      if (resultFx) resultFx.visible = false
+      box.ko.textContent = SCORE_KO[correct]
+      box.score.textContent = "Bạn đúng " + correct + "/4."
+      box.text.textContent = recap.join(" ") + " PR chọn mốc quà: từ 3/4, hoặc chỉ 4/4."
+      box.heard.textContent = ""
+      await speakClips(["audio/score-" + correct + ".wav"], token)
+    }
+
+    function holdScene(token, ms) {
+      return new Promise((resolve) => {
+        let settled = false
+        const finish = () => {
+          if (settled) return
+          settled = true
+          resolve()
+        }
+        tourSkip = finish
+        setTimeout(() => {
+          if (token === tourToken) finish()
+        }, ms)
+      })
+    }
+
+    async function startGuided() {
+      const token = ++tourToken
+      voiceMale = ROUTES[routeIndex].voice === "m"
+      setSpeaker(voiceMale)
+      speakToken += 1
+      quizBusy = false
+      if (playing) {
+        playing.onended = null
+        playing.pause()
+      }
+      document.querySelector("#route").classList.remove("open")
+      document.querySelector("#lab").classList.remove("open")
+      const box = tourBox()
+      box.root.classList.add("open")
+      box.mic.hidden = true
+      box.home.hidden = false
+      box.again.hidden = false
+      box.score.textContent = ""
+      box.progress.textContent = ROUTES[routeIndex].name
+      box.heard.textContent = ""
+      setTouring(true)
+      document.querySelector("#start-tour").textContent = "Làm lại"
+      const stops = ROUTES[routeIndex].stops
+      for (let index = 0; index < stops.length; index += 1) {
+        if (token !== tourToken) return
+        const id = stops[index]
+        const place = PLACES[id]
+        await goTo(id)
+        box.root.classList.add("open")
+        box.progress.textContent = place.title + " · cảnh " + (index + 1) + "/" + stops.length
+        box.ko.textContent = place.ko
+        box.text.textContent = place.line
+        box.choices.replaceChildren()
+        box.mic.hidden = true
+        box.next.hidden = false
+        box.home.hidden = false
+        let skipped = false
+        box.next.onclick = () => {
+          skipped = true
+          if (tourSkip) tourSkip()
+        }
+        if (place.audio) await speakClips([place.audio], token)
+        if (token !== tourToken) return
+        if (!skipped) await holdScene(token, 15000)
+      }
+      if (token !== tourToken) return
+      await askRounds(token)
+    }
+
+    async function startQuizOnly() {
+      document.querySelector("#route").classList.remove("open")
+      const token = ++tourToken
+      voiceMale = ROUTES[routeIndex].voice === "m"
+      setSpeaker(voiceMale)
+      speakToken += 1
+      quizBusy = false
+      if (playing) {
+        playing.onended = null
+        playing.pause()
+      }
+      document.querySelector("#lab").classList.remove("open")
+      const box = tourBox()
+      box.root.classList.add("open")
+      box.mic.hidden = true
+      box.home.hidden = false
+      box.again.hidden = false
+      box.score.textContent = ""
+      box.progress.textContent = ROUTES[routeIndex].name
+      box.heard.textContent = ""
+      box.choices.replaceChildren()
+      setTouring(true)
+      document.querySelector("#start-tour").textContent = "Làm lại"
+      await askRounds(token)
+    }
+
+    function fillRoute() {
+      const list = document.querySelector("#route-list")
+      list.replaceChildren()
+      ROUTES.forEach((route, index) => {
+        const block = document.createElement("div")
+        block.className = "route"
+        block.classList.toggle("on", index === routeIndex)
+        const button = document.createElement("button")
+        button.type = "button"
+        button.className = "card"
+        button.classList.toggle("on", index === routeIndex)
+        const name = document.createElement("span")
+        name.className = "name"
+        name.textContent = route.name
+        const count = document.createElement("span")
+        count.className = "count"
+        count.textContent = route.stops.length + " cảnh"
+        button.append(name, count)
+        button.addEventListener("click", () => {
+          routeIndex = index
+          fillRoute()
+        })
+        block.appendChild(button)
+        const voices = document.createElement("div")
+        voices.className = "voices"
+        for (const [id, label] of [["f", "Nữ"], ["m", "Nam"]]) {
+          const pick = document.createElement("button")
+          pick.type = "button"
+          pick.textContent = label
+          pick.classList.toggle("on-" + id, route.voice === id)
+          pick.addEventListener("click", () => {
+            route.voice = id
+            fillRoute()
+          })
+          voices.appendChild(pick)
+        }
+        block.appendChild(voices)
+        if (index === routeIndex) {
+          const stops = document.createElement("div")
+          stops.className = "stops"
+          stops.textContent = route.stops.map((id) => PLACES[id].title).join(" · ")
+          block.appendChild(stops)
+        }
+        list.appendChild(block)
+      })
+      const quiz = document.createElement("button")
+      quiz.type = "button"
+      quiz.className = "quiz"
+      quiz.textContent = "Câu hỏi của lộ trình này"
+      quiz.addEventListener("click", startQuizOnly)
+      list.appendChild(quiz)
+    }
+
+    document.querySelector("#speak").addEventListener("click", sayCurrent)
+    document.querySelector("#back").addEventListener("click", returnOverview)
+    document.querySelector("#open-lab").addEventListener("click", startLab)
+    document.querySelector("#open-route").addEventListener("click", () => {
+      document.querySelector("#route").classList.toggle("open")
+    })
+    document.querySelector("#start-tour").addEventListener("click", startGuided)
+    document.querySelector("#tour-home").addEventListener("click", returnOverview)
+    document.querySelector("#tour-again").addEventListener("click", startGuided)
+    fillRoute()
+    document.querySelector("#mic").addEventListener("click", listenVietnamese)
+    primeLabAudio()
+    primeTourAudio()
+
+    makePins()
+    makeCaption()
+    makeVrBoard()
+    makeResultFx()
+    addController(0)
+    addController(1)
+    mascotMaps.stand = await loadTexture("./img/moohan.png")
+    mascotMaps.point = await loadTexture("./img/moohan-point.png")
+    mascotMaps.pointLeft = await loadTexture("./img/moohan-point-left.png")
+    mascot = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: mascotMaps.stand,
+      transparent: true,
+      alphaTest: 0.3,
+      depthWrite: false
+    }))
+    mascot.visible = false
+    scene.add(mascot)
+    const aiTexture = await loadTexture("./pano/ai.png")
+    makeAiPlane(aiTexture)
+    await goTo("overview")
+    STATUS.textContent = "Kéo để nhìn. Bấm ghim là tay phải. Nút nói và phím F là tay trái. Phím Y là về."
+    renderer.setAnimationLoop(frame)
+  </script>
+</body>
+</html>
