@@ -15,7 +15,8 @@
     #line { display: none; }
     #line:not(:empty) { display: block; flex: 1 1 220px; background: rgba(12,16,22,.82); border-radius: 14px; padding: 10px 12px; }
     #hud button { background: rgba(12,16,22,.82); border: 1px solid rgba(255,255,255,.16); }
-    #status { position: fixed; top: 16px; left: 16px; z-index: 2; max-width: min(420px, calc(100% - 32px)); color: #f4f7fb; background: rgba(12,16,22,.72); border-radius: 14px; padding: 8px 12px; font-size: 14px; line-height: 1.4; }
+    #version { position: fixed; top: 16px; left: 16px; z-index: 6; font-size: 12px; letter-spacing: .04em; color: #f4f7fb; background: rgba(12,16,22,.72); border-radius: 999px; padding: 4px 8px; pointer-events: none; }
+    #status { position: fixed; top: 48px; left: 16px; z-index: 2; max-width: min(420px, calc(100% - 32px)); color: #f4f7fb; background: rgba(12,16,22,.72); border-radius: 14px; padding: 8px 12px; font-size: 14px; line-height: 1.4; }
     #lab, #tour, #route { display: none; }
     #lab.open, #tour.open, #route.open { display: block; }
     #lab, #tour { position: fixed; left: 16px; bottom: 16px; top: auto; z-index: 4; width: min(420px, calc(100vw - 32px)); max-height: min(78vh, 680px); overflow: auto; padding: 16px; border-radius: 22px; background: rgba(12,16,22,.88); box-shadow: 0 16px 40px rgba(0,0,0,.35); }
@@ -57,6 +58,7 @@
   </style>
 </head>
 <body>
+  <div id="version">v0.0.1</div>
   <div id="status">Đang tải ảnh campus…</div>
   <div id="hud">
     <div id="line"></div>
