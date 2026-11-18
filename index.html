@@ -50,15 +50,25 @@
     #route .name { font-size: 17px; font-weight: 700; }
     #route .count { font-size: 13px; opacity: .8; }
     #route .stops { margin: 4px 8px 2px; color: #d6ecff; font-size: 13px; line-height: 1.4; }
-    #route .voices { display: flex; gap: 6px; margin: 4px 8px 0; }
-    #route .voices button { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14); }
+    #route .voices { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 8px 0; }
+    #route .voices button { flex: 1 1 30%; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14); }
+    #tour-prize { margin-top: 14px; padding: 16px 12px 14px; border-radius: 18px; text-align: center; }
+    #tour-prize.win { background: rgba(230,168,23,.18); }
+    #tour-prize.lose { background: rgba(255,255,255,.06); }
+    #tour-prize .gift { width: 64px; height: 48px; margin: 0 auto 8px; position: relative; background: #d23b3b; border-radius: 4px; box-shadow: inset 0 16px 0 #e24a4a; }
+    #tour-prize .gift:before { content: ""; position: absolute; left: 28px; top: -10px; bottom: -4px; width: 8px; background: #ffd15c; }
+    #tour-prize .gift:after { content: ""; position: absolute; left: 16px; top: -18px; width: 14px; height: 14px; border: 4px solid #ffd15c; border-bottom: 0; border-radius: 14px 14px 0 0; }
+    #tour-prize.lose .gift { display: none; }
+    #tour-prize .prize-label { font-size: 22px; font-weight: 700; }
+    #tour-prize.win .prize-label { color: #ffd15c; }
+    #tour-prize.lose .prize-label { color: #d5dde6; font-size: 28px; }
     #route .voices button.on-f { background: #c2185b; border-color: transparent; }
     #route .voices button.on-m { background: #1565c0; border-color: transparent; }
     #route .quiz { width: 100%; margin-top: 10px; background: transparent; border: 1px solid rgba(255,255,255,.2); color: #f0d7a2; }
   </style>
 </head>
 <body>
-  <div id="version">v0.0.1</div>
+  <div id="version">v0.0.2</div>
   <div id="status">Đang tải ảnh campus…</div>
   <div id="hud">
     <div id="line"></div>
@@ -79,6 +89,7 @@
     </div>
     <div id="tour-ko"></div>
     <div id="tour-text"></div>
+    <div id="tour-prize" hidden><div class="gift"></div><div class="prize-label"></div></div>
     <div id="tour-choices"></div>
     <button id="tour-mic" type="button" hidden>Nói đáp án</button>
     <button id="tour-next" type="button" hidden>Tiếp</button>
@@ -112,35 +123,39 @@
       },
       vision: {
         sky: "03",
-        title: "Vision Tower",
-        ko: "이 건물은 분당선 가천대역과 바로 연결돼요. 과정은 베트남에서 2년, 한국에서 2년이고, 그다음엔 이 캠퍼스에서 공부해요.",
-        line: "Tòa này nối thẳng với ga tàu Gachon University, tuyến Bundang. Lộ trình chương trình là 2 năm ở Việt Nam, 2 năm ở Hàn Quốc, học tại campus này.",
-        audio: "audio/tour-vision.wav",
+        title: "Vision Tower Plaza",
+        ko: "역 출구가 비전타워로 바로 이어져요. 역과 학교를 잇는 지하 통로가 있어서 비나 해를 걱정하지 않아도 돼요. 이 건물에는 연구소도 있어요. 예를 들어 바이오헬스케어 융합연구원은 비전타워에서 개원했어요.",
+        line: "Lối ra của ga nối thẳng vào Vision Tower, và một đường hầm ngầm nối ga với trường, nên đi học không lo mưa nắng. Tòa nhà này cũng là nơi trường đặt các viện nghiên cứu, ví dụ Viện Nghiên cứu Hội tụ Biohealthcare khai trương tại Vision Tower.",
+        en: "The station exit leads straight into Vision Tower, and an underground passage connects the station to the campus, so the walk to class stays out of the rain and sun. This building also houses the university's research institutes. For example, the Biohealthcare Convergence Research Institute opened in Vision Tower.",
+        audio: "audio/r8-vision.wav",
         pitch: -10
       },
       fountain: {
         sky: "04",
-        title: "Đài phun",
-        ko: "역 옆에 분수가 있는 광장이에요. 학사 학위는 한국 가천대학교가 줘요.",
-        line: "Quảng trường có đài phun, cạnh nhà ga. Bằng cử nhân do Đại học Gachon, Hàn Quốc cấp.",
-        audio: "audio/tour-fountain.wav",
+        title: "Station Fountain Plaza",
+        ko: "여기는 학교로 들어오는 문이에요. 가천대역은 수인분당선이고, 가천 글로벌 캠퍼스를 바로 다녀요. 이 노선은 서울 중심으로 가요. 서울 남쪽에서 학교까지 버스나 지하철로 약 30분에서 40분이에요. 캠퍼스는 조용하고, 오가기도 편해요.",
+        line: "Đây là cửa ngõ vào trường. Ga Gachon University thuộc tuyến Suin–Bundang, phục vụ trực tiếp Global Campus của Gachon, và tuyến này chạy về hướng trung tâm Seoul. Từ nam Seoul đến trường mất khoảng 30-40 phút bằng bus hoặc tàu điện, sinh viên vừa học ở khuôn viên yên tĩnh vừa dễ đi lại.",
+        en: "This is the gateway into the university. Gachon University station is on the Suin–Bundang line, serves the Gachon Global Campus directly, and the line runs toward central Seoul. From southern Seoul the campus is about 30 to 40 minutes by bus or train. Students study on a quiet campus and can still get around easily.",
+        audio: "audio/r8-fountain.wav",
         pitch: 0
       },
       ai: {
         sky: "01",
-        title: "Tòa AI",
-        ko: "이 건물은 투어에 사진이 한 장뿐이라 지도 위에서 봐요. 과정에는 두 방향이 있어요. 반도체 공학, 그리고 시스템 반도체 설계예요.",
-        line: "Tour chỉ có một ảnh tòa này, nên đứng trên bản đồ mà xem. Chương trình có hai hướng: Kỹ thuật bán dẫn, và Thiết kế hệ thống bán dẫn.",
-        audio: "audio/tour-ai.wav",
+        title: "AI Building",
+        ko: "이 건물은 투어에 사진이 한 장뿐이라 지도 위에서 봐요. 인공지능과 소프트웨어, 컴퓨터공학, 차세대 반도체 프로그램의 강의실과 연구실이 있어요. 가천대학교는 2024년에 세계 최초로 반도체대학을 만든 학교로 소개돼요. 식각, 증착, 평탄화 같은 공정을 실습하는 클린룸도 있고, 225제곱미터에서 360제곱미터로 넓혔어요.",
+        line: "Tour chỉ có một ảnh tòa này, nên đứng trên bản đồ mà xem. Tòa nhà này có phòng học và văn phòng nghiên cứu của các ngành AI và Phần mềm, Kỹ thuật máy tính và các chương trình bán dẫn thế hệ mới. Ngoài ra, Gachon được giới thiệu là trường đại học đầu tiên trên thế giới thành lập College of Semiconductors, năm 2024. Trường còn có phòng sạch thực hành các quy trình như khắc, lắng đọng và mài phẳng, được mở rộng từ 225 lên 360 m².",
+        en: "The tour has only one photo of this building, so look at it from the map. It has classrooms and research offices for AI and Software, Computer Engineering, and next-generation semiconductor programs. Gachon is also introduced as the first university in the world to establish a College of Semiconductors, in 2024. The school has a cleanroom for practice steps such as etching, deposition, and planarization, expanded from 225 to 360 square meters.",
+        audio: "audio/r8-ai.wav",
         pitch: -18,
         flat: true
       },
       maker: {
         sky: "02",
         title: "Maker Space",
-        ko: "여기는 메이커 스페이스예요. 직접 물건을 만드는 곳이에요.",
-        line: "Đây là Maker Space, chỗ tự làm đồ.",
-        audio: "audio/tour-maker.wav",
+        ko: "메이커 스페이스는 학생이 실제 장비로 시제품을 만드는 창작 작업실이에요. 2020년 경기도 자료에는 약 1,178제곱미터이고, 현대 장비 60종, 전문 구역 19곳이 있다고 해요.",
+        line: "Đây là xưởng sáng tạo nơi sinh viên làm mẫu thử bằng thiết bị thật. Theo thông tin của tỉnh Gyeonggi năm 2020, không gian rộng khoảng 1.178 m², có 60 loại thiết bị hiện đại và 19 khu chuyên biệt.",
+        en: "This is a creative workshop where students make prototypes with real equipment. According to Gyeonggi Province in 2020, the space is about 1,178 square meters, with 60 kinds of modern equipment and 19 specialized zones.",
+        audio: "audio/r8-maker.wav",
         pitch: 0,
         yaw: 0
       }
@@ -151,7 +166,7 @@
       ["06", "Electronic Information Library", "전자정보도서관", "Thư viện thông tin điện tử"],
       ["07", "Student Service Center", "학생서비스센터", "Trung tâm dịch vụ sinh viên"],
       ["08", "Stardom Plaza", "스타덤 광장", "Quảng trường Stardom"],
-      ["09", "Infinity Sculpture", "무한 조형물", "Tượng vô cực"],
+      ["09", "Infinity Sculpture", "무한 조형물", "Tượng Infinity"],
       ["10", "Gachon Hall", "가천관", "Gachon Hall"],
       ["11", "Pinwheel Hill", "바람개비 언덕", "Đồi chong chóng"],
       ["12", "Central Library", "중앙도서관", "Thư viện trung tâm"],
@@ -167,8 +182,98 @@
       ["23", "Gachon Creative Factory Overview", "가천 크리에이티브 팩토리 전경", "Toàn cảnh Gachon Creative Factory"],
       ["24", "Gachon Creative Factory Main Building", "가천 크리에이티브 팩토리 본관", "Tòa chính Gachon Creative Factory"]
     ]
+    const SCENE_LINES = {
+      "05": {
+        ko: "OIS 센터는 외국인 유학생의 수강, 증명서, 장학금, 학생 업무를 돕는 곳이에요.",
+        line: "Trung tâm OIS hỗ trợ sinh viên quốc tế về môn học, giấy tờ, học bổng và việc sinh viên.",
+        audio: "audio/place-05.wav"
+      },
+      "06": {
+        ko: "전자정보도서관은 비전타워 안에 있어요. 전자자료와 학습 공간이 있는 도서관이에요.",
+        line: "Thư viện thông tin điện tử nằm trong Vision Tower, có tài liệu điện tử và chỗ học.",
+        audio: "audio/place-06.wav"
+      },
+      "07": {
+        ko: "학생서비스센터는 비전타워 안에 있어요. 취업 지원팀도 이 센터에 있어요.",
+        line: "Trung tâm dịch vụ sinh viên nằm trong Vision Tower. Tổ hỗ trợ việc làm cũng ở trong trung tâm này.",
+        audio: "audio/place-07.wav"
+      },
+      "08": {
+        ko: "바로 옆 광장은 행사를 여는 곳이에요. 예를 들어 개교 기념일에 학생들이 태권도 시범을 했어요.",
+        line: "Quảng trường kế bên là nơi tổ chức sự kiện, ví dụ biểu diễn Taekwondo của sinh viên nhân dịp kỷ niệm thành lập trường.",
+        en: "The plaza next to it hosts events. For example, students gave a Taekwondo performance for the university's anniversary.",
+        audio: "audio/r8-stardom.wav"
+      },
+      "09": {
+        ko: "무한대 조형물은 학교의 상징이에요. 한계 없는 발전을 나타내요. 학교의 공식 마스코트도 이 조형물을 바탕으로 만들었어요.",
+        line: "Tác phẩm Infinity là biểu tượng của trường, tượng trưng cho sự phát triển không giới hạn, và linh vật chính thức của trường được thiết kế dựa trên tượng này.",
+        en: "The Infinity sculpture is the symbol of the university. It stands for unlimited growth, and the official mascot was designed from this sculpture.",
+        audio: "audio/r8-infinity.wav"
+      },
+      "10": {
+        ko: "가천관은 학교의 중심 건물이에요. 2014년에 지었고, 지상 12층, 지하 2층이에요. 캠퍼스 한가운데 큰 광장 옆에 있어요. 가천과 FPT의 반도체 협력 서명식도 이 가천관에서 열렸어요.",
+        line: "Đây là tòa nhà trung tâm của trường, xây năm 2014, cao 12 tầng và 2 tầng hầm, nằm giữa campus cạnh quảng trường lớn. Lễ ký kết hợp tác bán dẫn giữa Gachon và FPT cũng diễn ra tại chính Gachon Hall.",
+        en: "This is the university's central building, built in 2014, with 12 floors and 2 basement levels, in the middle of campus beside the large plaza. The semiconductor partnership signing between Gachon and FPT was also held in this Gachon Hall.",
+        audio: "audio/r8-hall.wav"
+      },
+      "11": {
+        ko: "바람개비 언덕은 학생 축제가 열리는 곳이에요.",
+        line: "Đồi chong chóng là chỗ sinh viên mở lễ hội.",
+        audio: "audio/place-11.wav"
+      },
+      "12": {
+        ko: "중앙도서관은 조용히 공부하는 곳이에요. 가천관과 글로벌존에도 열람실이 있어요.",
+        line: "Đây là nơi học yên tĩnh, ngoài ra còn có phòng đọc ở Gachon Hall và Global Zone.",
+        en: "This is a quiet place to study. There are also reading rooms in Gachon Hall and the Global Zone.",
+        audio: "audio/r8-library.wav"
+      },
+      "13": {
+        ko: "여기는 글로벌 캠퍼스 학생 기숙사 전경이에요. 제1, 제2, 제3생활관이 있어요.",
+        line: "Đây là toàn cảnh ký túc xá trên Global Campus. Có nhà 1, nhà 2 và nhà 3.",
+        audio: "audio/place-13.wav"
+      },
+      "14": {
+        ko: "기숙사는 캠퍼스 높은 쪽에 있어요. AI 건물과 제3기숙사도 캠퍼스 위쪽에 있고, 그쪽에 제1, 제2기숙사도 있어요. 2022년 보도에는 제3기숙사가 720명, 제1기숙사가 636명, 제2기숙사가 984명을 받는다고 해요.",
+        line: "Ký túc xá nằm ở khu cao của campus. Tòa AI Building và Ký túc xá số 3 cùng nằm ở phía trên campus, nơi có ký túc xá số 1 và 2. Theo báo chí năm 2022, ký túc xá số 3 chứa 720 người, số 1 và số 2 lần lượt chứa 636 và 984 người.",
+        en: "The residence halls are on the upper part of campus. The AI Building and Residence Hall 3 are both on that upper side, where Residence Halls 1 and 2 are too. According to a 2022 news report, Hall 3 holds 720 people, Hall 1 holds 636, and Hall 2 holds 984.",
+        audio: "audio/r8-dorm.wav"
+      },
+      "15": {
+        ko: "여기는 인천 연수구에 있는 메디컬 캠퍼스예요. 성남 글로벌 캠퍼스와는 다른 곳이에요.",
+        line: "Đây là cơ sở y ở Yeonsu, Incheon. Khác với Global Campus ở Seongnam.",
+        audio: "audio/place-15.wav"
+      },
+      "16": {
+        ko: "백봉은 메디컬 캠퍼스 간호대학 1층에 있는 스터디 카페예요.",
+        line: "Baengbong là quán học ở tầng 1 trường Điều dưỡng, trên cơ sở y.",
+        audio: "audio/place-16.wav"
+      },
+      "19": {
+        ko: "바람개비 언덕은 학생 축제가 열리는 곳이에요.",
+        line: "Đồi chong chóng là chỗ sinh viên mở lễ hội.",
+        audio: "audio/place-11.wav"
+      },
+      "20": {
+        ko: "이길여 암·당뇨 연구원은 암과 당뇨병의 진단, 치료, 예방을 연구하는 곳이에요.",
+        line: "Viện Lee Gil Ya nghiên cứu chẩn đoán, điều trị và phòng ngừa ung thư và tiểu đường.",
+        audio: "audio/place-20.wav"
+      },
+      "21": {
+        ko: "뇌과학연구원은 뇌를 연구하는 곳이에요. 대학 안내에 따르면 PET-MRI 융합 영상 시스템을 개발한 연구소예요.",
+        line: "Viện khoa học thần kinh nghiên cứu về não. Trang của trường giới thiệu viện này là nơi phát triển hệ thống ảnh PET-MRI.",
+        audio: "audio/place-21.wav"
+      },
+      "22": {
+        ko: "의과대학은 인천에 있어요.",
+        line: "Trường Y của Đại học Gachon ở Incheon.",
+        audio: "audio/place-22.wav"
+      }
+    }
     for (const [id, title, ko, line] of MORE_SCENES) {
-      PLACES[id] = { sky: id, title, ko, line, pitch: 0, yaw: 0 }
+      const extra = SCENE_LINES[id]
+      PLACES[id] = extra
+        ? { sky: id, title, ko: extra.ko, line: extra.line, audio: extra.audio, pitch: 0, yaw: 0 }
+        : { sky: id, title, ko, line, pitch: 0, yaw: 0 }
     }
 
     const PINS = [
@@ -523,13 +628,50 @@
         depthWrite: false
       }))
       actor.visible = false
-      resultFx.add(ok, bad, ring, actor)
+      const gift = new THREE.Group()
+      const boxMat = new THREE.MeshBasicMaterial({ color: 0xd23b3b })
+      const lidMat = new THREE.MeshBasicMaterial({ color: 0xe24a4a })
+      const ribbonMat = new THREE.MeshBasicMaterial({ color: 0xffd15c })
+      const giftBox = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.26, 0.34), boxMat)
+      const lid = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.08, 0.38), lidMat)
+      lid.position.y = 0.17
+      const ribbonY = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.36, 0.36), ribbonMat)
+      const ribbonZ = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.36, 0.07), ribbonMat)
+      const bow = new THREE.Mesh(new THREE.SphereGeometry(0.07, 12, 12), ribbonMat)
+      bow.position.y = 0.28
+      gift.add(giftBox, lid, ribbonY, ribbonZ, bow)
+      gift.visible = false
+      const regret = makeTextPlane("Tiếc quá", "#2a3340")
+      regret.visible = false
+      resultFx.add(ok, bad, ring, actor, gift, regret)
       resultFx.userData.ok = ok
       resultFx.userData.bad = bad
       resultFx.userData.ring = ring
       resultFx.userData.sparks = sparks
       resultFx.userData.actor = actor
+      resultFx.userData.gift = gift
+      resultFx.userData.regret = regret
+      resultFx.userData.mode = "quiz"
       camera.add(resultFx)
+    }
+
+    function makeTextPlane(words, color) {
+      const canvas = document.createElement("canvas")
+      canvas.width = 512
+      canvas.height = 160
+      const ctx = canvas.getContext("2d")
+      ctx.fillStyle = color
+      ctx.fillRect(0, 0, 512, 160)
+      ctx.fillStyle = "#f4f7fb"
+      ctx.font = "700 72px Roboto, sans-serif"
+      ctx.textAlign = "center"
+      ctx.textBaseline = "middle"
+      ctx.fillText(words, 256, 84)
+      const mesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.72, 0.22),
+        new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(canvas), transparent: true })
+      )
+      return mesh
     }
 
     function fitActor(texture, height) {
@@ -543,12 +685,16 @@
     function playResultFx(hit) {
       if (!resultFx) return
       resultFx.visible = true
+      resultFx.userData.mode = "quiz"
       resultFx.userData.hit = hit
       resultFx.userData.start = performance.now()
       resultFx.userData.ok.visible = hit
       resultFx.userData.bad.visible = !hit
       resultFx.userData.ring.visible = hit
+      resultFx.userData.gift.visible = false
+      resultFx.userData.regret.visible = false
       const actor = resultFx.userData.actor
+      actor.material.rotation = 0
       if (actor && mascotMaps.stand) fitActor(hit ? mascotMaps.pointLeft : mascotMaps.stand, hit ? 0.62 : 0.5)
       const sparks = resultFx.userData.sparks
       for (let i = 0; i < sparks.length; i += 1) {
@@ -563,8 +709,41 @@
       }
     }
 
+    function playEndFx(won) {
+      if (!resultFx) return
+      resultFx.visible = true
+      resultFx.userData.mode = "end"
+      resultFx.userData.hit = won
+      resultFx.userData.start = performance.now()
+      resultFx.userData.ok.visible = false
+      resultFx.userData.bad.visible = false
+      resultFx.userData.ring.visible = false
+      for (const mesh of resultFx.userData.sparks) mesh.visible = false
+      resultFx.userData.gift.visible = won
+      resultFx.userData.regret.visible = !won
+      const actor = resultFx.userData.actor
+      actor.material.rotation = 0
+      if (mascotMaps.stand) fitActor(won ? mascotMaps.pointLeft : mascotMaps.stand, won ? 0.62 : 0.5)
+    }
+
     function updateResultFx() {
       if (!resultFx || !resultFx.visible) return
+      if (resultFx.userData.mode === "end") {
+        const wave = (performance.now() - resultFx.userData.start) / 1000
+        const gift = resultFx.userData.gift
+        gift.position.y = Math.sin(wave * 2.2) * 0.06
+        gift.rotation.y = wave * 0.7
+        const actor = resultFx.userData.actor
+        if (resultFx.userData.hit) {
+          actor.position.set(0.46, Math.abs(Math.sin(wave * 3)) * 0.08, 0.08)
+          actor.material.rotation = 0
+        } else {
+          actor.position.set(0.34, -0.16, 0.08)
+          actor.material.rotation = 0.4
+          resultFx.userData.regret.position.set(-0.16, 0.16, 0)
+        }
+        return
+      }
       const elapsed = (performance.now() - resultFx.userData.start) / 1600
       const mark = resultFx.userData.hit ? resultFx.userData.ok : resultFx.userData.bad
       const pop = Math.min(elapsed / 0.16, 1)
@@ -837,11 +1016,17 @@
 
     function primeTourAudio() {
       const urls = ["audio/right.wav", "audio/wrong.wav", "audio/choose.wav"]
-      for (let n = 0; n < 5; n += 1) urls.push("audio/score-" + n + ".wav")
+      for (let n = 0; n <= 5; n += 1) urls.push("audio/r8-score-" + n + ".wav")
       for (const letter of ["a", "b", "c"]) urls.push("audio/letter-" + letter + ".wav")
-      for (let n = 1; n <= 4; n += 1) urls.push("audio/num-" + n + ".wav")
+      for (let n = 1; n <= 5; n += 1) urls.push("audio/num-" + n + ".wav")
       for (const route of ROUTES) {
         for (const id of route.stops) if (PLACES[id].audio) urls.push(PLACES[id].audio)
+        if (!route.questions) continue
+        for (const item of route.questions) {
+          urls.push(item.qAudio)
+          if (item.explainAudio) urls.push(item.explainAudio)
+          for (const option of item.options) urls.push(option.audio)
+        }
       }
       for (const group of QUIZ_GROUPS) {
         for (const item of group) {
@@ -1107,44 +1292,176 @@
     window.addEventListener("pointerup", onPointerUp)
     window.addEventListener("keydown", onKey)
     window.addEventListener("resize", onResize)
+    const EIGHT_POINT = { fountain: 1, vision: 2, "10": 3, "09": 4, "08": 4, maker: 5, ai: 6, "14": 7, "12": 8 }
+    const EIGHT_QUIZ = [
+      {
+        q: "Ga Gachon University thuộc tuyến nào?",
+        qKo: "가천대역은 어느 노선인가요?",
+        qEn: "Which line is Gachon University station on?",
+        qAudio: "audio/r8-q-line.wav",
+        explainKo: "가천대역은 수인분당선이에요. 서울 중심으로 가요.",
+        explain: "Ga thuộc tuyến Suin–Bundang, chạy về hướng trung tâm Seoul.",
+        explainEn: "The station is on the Suin–Bundang line, which runs toward central Seoul.",
+        explainAudio: "audio/r8-why-line.wav",
+        options: [
+          { vi: "Suin–Bundang", ko: "수인분당선", en: "Suin–Bundang", audio: "audio/r8-opt-suin.wav", say: ["suin", "bundang"] },
+          { vi: "Tuyến vòng Seoul", ko: "서울 순환선", en: "Seoul loop line", audio: "audio/opt-seoul-loop.wav", say: ["vong seoul"] },
+          { vi: "Tuyến sân bay", ko: "공항철도", en: "Airport line", audio: "audio/opt-airport-line.wav", say: ["san bay"] }
+        ]
+      },
+      {
+        q: "Từ nam Seoul đến trường mất khoảng bao lâu bằng bus hoặc tàu?",
+        qKo: "서울 남쪽에서 학교까지 얼마나 걸려요?",
+        qEn: "About how long does it take from southern Seoul by bus or train?",
+        qAudio: "audio/r8-q-time.wav",
+        explainKo: "버스나 지하철로 약 30분에서 40분이에요.",
+        explain: "Khoảng 30-40 phút bằng bus hoặc tàu điện.",
+        explainEn: "About 30 to 40 minutes by bus or train.",
+        explainAudio: "audio/r8-why-time.wav",
+        options: [
+          { vi: "Khoảng 30-40 phút", ko: "약 30분에서 40분", en: "About 30 to 40 minutes", audio: "audio/r8-opt-time.wav", say: ["30", "40", "ba muoi", "bon muoi"] },
+          { vi: "Khoảng 2 giờ", ko: "약 2시간", en: "About 2 hours", audio: "audio/r8-opt-two-hours.wav", say: ["2 gio", "hai gio"] },
+          { vi: "Khoảng 5 phút", ko: "약 5분", en: "About 5 minutes", audio: "audio/r8-opt-five-min.wav", say: ["5 phut", "nam phut"] }
+        ]
+      },
+      {
+        q: "Gachon Hall xây năm nào?",
+        qKo: "가천관은 몇 년에 지었나요?",
+        qEn: "In what year was Gachon Hall built?",
+        qAudio: "audio/r8-q-year.wav",
+        explainKo: "2014년에 지었고, 지상 12층, 지하 2층이에요.",
+        explain: "Xây năm 2014, cao 12 tầng và 2 tầng hầm.",
+        explainEn: "It was built in 2014, with 12 floors and 2 basement levels.",
+        explainAudio: "audio/r8-why-year.wav",
+        options: [
+          { vi: "2014", ko: "2014년", en: "2014", audio: "audio/r8-opt-2014.wav", say: ["2014", "hai khong mot bon"] },
+          { vi: "2008", ko: "2008년", en: "2008", audio: "audio/r8-opt-2008.wav", say: ["2008"] },
+          { vi: "2024", ko: "2024년", en: "2024", audio: "audio/r8-opt-2024.wav", say: ["2024"] }
+        ]
+      },
+      {
+        q: "Tượng Infinity tượng trưng cho điều gì?",
+        qKo: "무한대 조형물은 무엇을 나타내나요?",
+        qEn: "What does the Infinity sculpture stand for?",
+        qAudio: "audio/r8-q-infinity.wav",
+        explainKo: "한계 없는 발전을 나타내요. 공식 마스코트도 이 조형물을 바탕으로 만들었어요.",
+        explain: "Sự phát triển không giới hạn. Linh vật chính thức của trường dựa trên tượng này.",
+        explainEn: "Unlimited growth. The official mascot was designed from this sculpture.",
+        explainAudio: "audio/r8-why-infinity.wav",
+        options: [
+          { vi: "Sự phát triển không giới hạn", ko: "한계 없는 발전", en: "Unlimited growth", audio: "audio/r8-opt-limitless.wav", say: ["khong gioi han", "phat trien"] },
+          { vi: "Ga tàu", ko: "기차역", en: "The train station", audio: "audio/opt-train.wav", say: ["ga tau"] },
+          { vi: "Ký túc xá", ko: "기숙사", en: "The residence hall", audio: "audio/r8-opt-dorm.wav", say: ["ky tuc"] }
+        ]
+      },
+      {
+        q: "Theo báo năm 2022, ký túc xá số 3 chứa bao nhiêu người?",
+        qKo: "2022년 보도에서 제3기숙사는 몇 명인가요?",
+        qEn: "According to the 2022 report, how many people does Residence Hall 3 hold?",
+        qAudio: "audio/r8-q-dorm.wav",
+        explainKo: "제3기숙사는 720명이에요. 제1기숙사는 636명, 제2기숙사는 984명이에요.",
+        explain: "Nhà 3 chứa 720 người. Nhà 1 là 636 người, nhà 2 là 984 người.",
+        explainEn: "Hall 3 holds 720 people. Hall 1 holds 636, and Hall 2 holds 984.",
+        explainAudio: "audio/r8-why-dorm.wav",
+        options: [
+          { vi: "720 người", ko: "720명", en: "720 people", audio: "audio/r8-opt-720.wav", say: ["720", "bay tram hai muoi"] },
+          { vi: "636 người", ko: "636명", en: "636 people", audio: "audio/r8-opt-636.wav", say: ["636"] },
+          { vi: "984 người", ko: "984명", en: "984 people", audio: "audio/r8-opt-984.wav", say: ["984"] }
+        ]
+      }
+    ]
     const ROUTES = [
       {
-        name: "Sân trường",
-        stops: ["overview", "vision", "08", "09", "11", "19"],
-        quiz: [0, 1, 2, 4, 5],
-        voice: "f"
-      },
-      {
-        name: "Chỗ học",
-        stops: ["overview", "maker", "ai", "05", "06", "07", "10", "12"],
-        quiz: [2, 3, 7, 8, 9],
-        voice: "f"
-      },
-      {
-        name: "Ký túc",
-        stops: ["overview", "fountain", "13", "14", "16"],
-        quiz: [1, 3, 6, 9],
-        voice: "f"
-      },
-      {
-        name: "Y và xưởng",
-        stops: ["vision", "fountain", "maker", "15", "18", "20", "21", "22", "23", "24"],
-        quiz: [4, 5, 6, 8],
-        voice: "f"
+        name: "8 điểm",
+        stops: ["fountain", "vision", "10", "09", "08", "maker", "ai", "14", "12"],
+        questions: EIGHT_QUIZ,
+        voice: "ko-f"
       }
     ]
     let routeIndex = 0
-    let voiceMale = false
+    let voiceOn = false
+    const PRIZE_LINE = {
+      ko: "3문제 이상 맞혀서 선물을 받아요.",
+      vi: "Đủ 3 câu, nhận quà may mắn.",
+      en: "You got at least 3 right, so you receive a lucky gift."
+    }
+    const REGRET_LINE = {
+      ko: "아쉬워요. 3문제 이상 맞춰야 선물을 받아요.",
+      vi: "Tiếc quá, chưa đủ 3 câu nên chưa có quà.",
+      en: "What a shame. You need 3 right answers to receive the gift."
+    }
+
+    function voiceParts() {
+      const voice = ROUTES[routeIndex].voice || "ko-f"
+      const bits = voice.split("-")
+      return { lang: bits[0] || "ko", male: bits[1] === "m" }
+    }
+
+    function scoreLine(lang, count) {
+      if (lang === "ko") return "5문제 중 " + count + "문제를 맞혔어요."
+      if (lang === "en") return "You got " + count + " out of 5."
+      return "Bạn đúng " + count + " trên 5 câu."
+    }
 
     function voiced(url) {
-      if (!voiceMale || typeof url !== "string" || !url.startsWith("audio/") || url.startsWith("audio/m/")) return url
-      return "audio/m/" + url.slice("audio/".length)
+      if (!voiceOn || typeof url !== "string" || !url.startsWith("audio/")) return url
+      let name = url.slice("audio/".length)
+      if (name.startsWith("m/")) name = name.slice(2)
+      const voice = voiceParts()
+      if (voice.lang === "ko") return voice.male ? "audio/m/" + name : "audio/" + name
+      return "audio/" + voice.lang + "/" + (voice.male ? "m/" : "") + name
     }
 
     function setSpeaker(male) {
       const img = document.querySelector("#tour-speaker img")
       img.src = male ? "img/hanbok-male.jpg" : "img/hanbok.jpg"
       img.alt = male ? "Người nam mặc hanbok" : "Người nữ mặc hanbok"
+    }
+
+    function showSpoken(box, spoken, vi) {
+      box.ko.textContent = spoken === vi ? "" : spoken
+      box.text.textContent = vi
+    }
+
+    function placeSpoken(place) {
+      const lang = voiceParts().lang
+      if (lang === "en") return place.en || place.line
+      if (lang === "vi") return place.line
+      return place.ko
+    }
+
+    function questionSpoken(item) {
+      const lang = voiceParts().lang
+      if (lang === "en") return item.qEn || item.q
+      if (lang === "vi") return item.q
+      return item.qKo
+    }
+
+    function explainSpoken(item) {
+      const lang = voiceParts().lang
+      if (lang === "en") return item.explainEn || item.explain
+      if (lang === "vi") return item.explain
+      return item.explainKo
+    }
+
+    function optionSpoken(choice) {
+      const lang = voiceParts().lang
+      if (lang === "en") return choice.en || choice.text
+      if (lang === "vi") return choice.text
+      return choice.ko
+    }
+
+    function showPrize(won) {
+      const node = document.querySelector("#tour-prize")
+      node.hidden = false
+      node.className = won ? "win" : "lose"
+      node.querySelector(".prize-label").textContent = won ? "Quà may mắn" : "Tiếc quá"
+    }
+
+    function hidePrize() {
+      const node = document.querySelector("#tour-prize")
+      node.hidden = true
+      node.className = ""
     }
     const SCORE_KO = [
       "4문제 중 0문제를 맞혔어요.",
@@ -1294,7 +1611,8 @@
       const speaker = document.querySelector("#tour-speaker")
       if (speaker) speaker.classList.remove("talking")
       if (resultFx) resultFx.visible = false
-      voiceMale = false
+      voiceOn = false
+      hidePrize()
       setSpeaker(false)
       const box = tourBox()
       box.root.classList.remove("open")
@@ -1341,7 +1659,9 @@
     }
 
     function pickQuiz() {
-      const groups = ROUTES[routeIndex].quiz.map((index) => QUIZ_GROUPS[index])
+      const route = ROUTES[routeIndex]
+      if (route.questions) return route.questions.slice()
+      const groups = route.quiz.map((index) => QUIZ_GROUPS[index])
       return shuffle(groups).slice(0, 4).map((group) => group[Math.floor(Math.random() * group.length)])
     }
 
@@ -1350,6 +1670,7 @@
       return shuffle(item.options.map((option, index) => ({
         text: option.vi,
         ko: option.ko,
+        en: option.en,
         audio: option.audio,
         say: option.say,
         correct: index === 0
@@ -1357,6 +1678,7 @@
         letter: letters[index],
         text: choice.text,
         ko: choice.ko,
+        en: choice.en,
         audio: choice.audio,
         say: choice.say,
         correct: choice.correct
@@ -1393,7 +1715,8 @@
       for (const choice of round.choices) {
         const button = document.createElement("button")
         button.type = "button"
-        button.textContent = choice.letter + ". " + choice.ko + " — " + choice.text
+        const spoken = optionSpoken(choice)
+        button.textContent = spoken === choice.text ? choice.letter + ". " + choice.text : choice.letter + ". " + spoken + " — " + choice.text
         button.addEventListener("click", () => gradeRound(round, choice.letter, token))
         box.choices.appendChild(button)
       }
@@ -1437,7 +1760,9 @@
       const hit = !!(picked && picked.correct)
       if (hit) round.score = 1
       playResultFx(hit)
-      box.heard.textContent = hit ? "맞아요. Đúng." : "정답은 " + round.correct.ko + ". Đáp án là " + round.correct.text + "."
+      const lang = voiceParts().lang
+      const answer = optionSpoken(round.correct)
+      box.heard.textContent = hit ? (lang === "ko" ? "맞아요." : lang === "en" ? "That's right." : "Đúng rồi.") : (lang === "ko" ? "정답은 " + answer + "." : lang === "en" ? "The right answer is " + answer + "." : "Đáp án đúng là " + answer + ".")
       for (const button of box.choices.querySelectorAll("button")) button.disabled = true
       box.mic.hidden = true
       box.next.hidden = false
@@ -1454,8 +1779,7 @@
       await speakClips(hit ? ["audio/right.wav"] : ["audio/wrong.wav", round.correct.audio], token)
       if (moved || token !== tourToken) return
       if (round.explainAudio) {
-        box.ko.textContent = round.explainKo
-        box.text.textContent = round.explain
+        showSpoken(box, explainSpoken(round), round.explain)
         await speakClips([round.explainAudio], token)
       }
       if (moved || token !== tourToken) return
@@ -1480,12 +1804,12 @@
           score: 0,
           explainKo: item.explainKo,
           explain: item.explain,
+          explainEn: item.explainEn,
           explainAudio: item.explainAudio,
           done: null
         }
-        box.score.textContent = "Câu " + (index + 1) + "/4. Đúng " + correct + "."
-        box.ko.textContent = item.qKo
-        box.text.textContent = item.q
+        box.score.textContent = "Câu " + (index + 1) + "/" + items.length + ". Đúng " + correct + "."
+        showSpoken(box, questionSpoken(item), item.q)
         box.heard.textContent = ""
         showChoices(round, token)
         const files = ["audio/num-" + (index + 1) + ".wav", item.qAudio]
@@ -1505,12 +1829,15 @@
       box.mic.hidden = true
       box.next.hidden = true
       box.home.hidden = false
-      if (resultFx) resultFx.visible = false
-      box.ko.textContent = SCORE_KO[correct]
-      box.score.textContent = "Bạn đúng " + correct + "/4."
-      box.text.textContent = recap.join(" ") + " PR chọn mốc quà: từ 3/4, hoặc chỉ 4/4."
+      const won = correct >= 3
+      const lang = voiceParts().lang
+      const ending = won ? PRIZE_LINE[lang] : REGRET_LINE[lang]
+      showSpoken(box, scoreLine(lang, correct) + " " + ending, (won ? PRIZE_LINE.vi : REGRET_LINE.vi))
+      box.score.textContent = "Bạn đúng " + correct + "/5."
       box.heard.textContent = ""
-      await speakClips(["audio/score-" + correct + ".wav"], token)
+      showPrize(won)
+      playEndFx(won)
+      await speakClips(["audio/r8-score-" + correct + ".wav", won ? "audio/r8-prize.wav" : "audio/r8-regret.wav"], token)
     }
 
     function holdScene(token, ms) {
@@ -1530,8 +1857,10 @@
 
     async function startGuided() {
       const token = ++tourToken
-      voiceMale = ROUTES[routeIndex].voice === "m"
-      setSpeaker(voiceMale)
+      voiceOn = true
+      setSpeaker(voiceParts().male)
+      hidePrize()
+      if (resultFx) resultFx.visible = false
       speakToken += 1
       quizBusy = false
       if (playing) {
@@ -1557,9 +1886,9 @@
         const place = PLACES[id]
         await goTo(id)
         box.root.classList.add("open")
-        box.progress.textContent = place.title + " · cảnh " + (index + 1) + "/" + stops.length
-        box.ko.textContent = place.ko
-        box.text.textContent = place.line
+        const point = EIGHT_POINT[id] || (index + 1)
+        box.progress.textContent = place.title + " · điểm " + point + "/8"
+        showSpoken(box, placeSpoken(place), place.line)
         box.choices.replaceChildren()
         box.mic.hidden = true
         box.next.hidden = false
@@ -1580,8 +1909,10 @@
     async function startQuizOnly() {
       document.querySelector("#route").classList.remove("open")
       const token = ++tourToken
-      voiceMale = ROUTES[routeIndex].voice === "m"
-      setSpeaker(voiceMale)
+      voiceOn = true
+      setSpeaker(voiceParts().male)
+      hidePrize()
+      if (resultFx) resultFx.visible = false
       speakToken += 1
       quizBusy = false
       if (playing) {
@@ -1619,7 +1950,7 @@
         name.textContent = route.name
         const count = document.createElement("span")
         count.className = "count"
-        count.textContent = route.stops.length + " cảnh"
+        count.textContent = route.questions ? "9 cảnh" : route.stops.length + " cảnh"
         button.append(name, count)
         button.addEventListener("click", () => {
           routeIndex = index
@@ -1628,11 +1959,12 @@
         block.appendChild(button)
         const voices = document.createElement("div")
         voices.className = "voices"
-        for (const [id, label] of [["f", "Nữ"], ["m", "Nam"]]) {
+        for (const [id, label] of [["ko-f", "Hàn · Nữ"], ["ko-m", "Hàn · Nam"], ["vi-f", "Việt · Nữ"], ["vi-m", "Việt · Nam"], ["en-f", "Anh · Nữ"], ["en-m", "Anh · Nam"]]) {
           const pick = document.createElement("button")
           pick.type = "button"
           pick.textContent = label
-          pick.classList.toggle("on-" + id, route.voice === id)
+          pick.classList.toggle("on-f", route.voice === id && id.endsWith("-f"))
+          pick.classList.toggle("on-m", route.voice === id && id.endsWith("-m"))
           pick.addEventListener("click", () => {
             route.voice = id
             fillRoute()
