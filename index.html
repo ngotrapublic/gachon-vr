@@ -33,12 +33,12 @@
     #ko, #sub, #tour-ko, #tour-text { background: transparent; padding: 0; }
     #ko, #tour-ko { margin-top: 14px; font-size: 18px; line-height: 1.45; }
     #sub, #tour-text { margin-top: 6px; color: #d6ecff; font-size: 15px; line-height: 1.45; }
-    #mic, #tour-mic, #tour-next, #tour-home { width: 100%; margin-top: 12px; min-height: 48px; font-size: 17px; }
-    #mic, #tour-mic, #start-tour { background: #0e6b4f; }
+    #mic, #tour-next, #tour-home { width: 100%; margin-top: 12px; min-height: 48px; font-size: 17px; }
+    #mic, #start-tour { background: #0e6b4f; }
     #tour-next { background: #0e6b4f; }
     #tour-home, #open-route { background: #5a3e16; }
-    #heard, #tour-heard { color: #f4f7fb; margin-top: 8px; font-size: 14px; }
-    #tour-heard:empty, #heard:empty { display: none; }
+    #heard { color: #f4f7fb; margin-top: 8px; font-size: 14px; }
+    #heard:empty { display: none; }
     #choices, #tour-choices { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
     #choices button, #tour-choices button { text-align: left; min-height: 48px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14); }
     #tour-choices button:disabled, #choices button:disabled { opacity: .55; }
@@ -67,10 +67,30 @@
     #route .voices button.on-f, #route .voice-current.on-f { background: #c2185b; border-color: transparent; }
     #route .voices button.on-m, #route .voice-current.on-m { background: #1565c0; border-color: transparent; }
     #route .quiz { width: 100%; margin-top: 10px; background: transparent; border: 1px solid rgba(255,255,255,.2); color: #f0d7a2; }
+    #audience { display: none; position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 8; width: min(360px, calc(100vw - 32px)); padding: 18px; border-radius: 22px; background: rgba(12,16,22,.94); box-shadow: 0 16px 40px rgba(0,0,0,.4); }
+    #audience.open { display: block; }
+    #audience .title { font-size: 20px; font-weight: 700; margin-bottom: 12px; }
+    #audience .roles { display: flex; flex-direction: column; gap: 10px; }
+    #audience .roles button { width: 100%; min-height: 52px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14); font-size: 18px; }
+    #audience .roles button.on { background: #e6a817; color: #1a1204; border-color: transparent; }
+    #tour-muhan { display: none !important; position: fixed; left: 50%; top: 48%; transform: translate(-50%, -50%); z-index: 7; pointer-events: none; margin: 0; padding: 0; }
+    #tour-muhan.open { display: block !important; }
+    #tour-muhan img { display: block; width: min(56vw, 460px); height: min(56vw, 460px); object-fit: cover; border-radius: 28px; background: #d7ecff; box-shadow: 0 20px 50px rgba(0,0,0,.45); }
+    #tour-muhan.talking img { animation: muhanTalk .28s ease-in-out infinite; }
+    @keyframes muhanTalk { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(.96) translateY(4px); } }
+    #tour-muhan .muhan-line { display: none !important; }
+    #spot-box { display: none; position: fixed; inset: 0; z-index: 20; background: rgba(0,0,0,.78); align-items: center; justify-content: center; padding: 16px; }
+    #spot-box.open { display: flex; }
+    #spot-box .panel { width: min(760px, 100%); max-height: calc(100vh - 32px); overflow: auto; border-radius: 20px; background: rgba(12,16,22,.96); padding: 14px; }
+    #spot-box .spot-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+    #spot-box .spot-line { color: #d6ecff; font-size: 15px; line-height: 1.45; margin-bottom: 10px; }
+    #spot-box .spot-photos { display: flex; gap: 8px; overflow-x: auto; }
+    #spot-box .spot-photos img { height: min(42vh, 320px); width: auto; border-radius: 12px; background: #111; }
+    #spot-box .spot-close { width: 100%; margin-top: 12px; background: #0e6b4f; min-height: 48px; }
   </style>
 </head>
 <body>
-  <div id="version">v0.0.3</div>
+  <div id="version">v0.0.5</div>
   <div id="status">Đang tải ảnh campus…</div>
   <div id="hud">
     <div id="line"></div>
@@ -93,10 +113,26 @@
     <div id="tour-text"></div>
     <div id="tour-prize" hidden><div class="gift"></div><div class="prize-label"></div></div>
     <div id="tour-choices"></div>
-    <button id="tour-mic" type="button" hidden>Nói đáp án</button>
     <button id="tour-next" type="button" hidden>Tiếp</button>
     <button id="tour-home" type="button" hidden>Về</button>
-    <div id="tour-heard"></div>
+  </div>
+  <div id="tour-muhan">
+    <img src="img/muhan-proud.jpg" alt="Muhan">
+  </div>
+  <div id="audience">
+    <div class="title">Bạn là:</div>
+    <div class="roles">
+      <button type="button" data-role="parent">Phụ huynh</button>
+      <button type="button" data-role="student">Học sinh</button>
+    </div>
+  </div>
+  <div id="spot-box">
+    <div class="panel">
+      <div class="spot-title"></div>
+      <div class="spot-line"></div>
+      <div class="spot-photos"></div>
+      <button type="button" class="spot-close">Đóng</button>
+    </div>
   </div>
   <div id="route"><div id="route-list"></div></div>
   <div id="lab">
@@ -144,9 +180,9 @@
       ai: {
         sky: "01",
         title: "AI Building",
-        ko: "이 건물은 투어에 사진이 한 장뿐이라 지도 위에서 봐요. 인공지능과 소프트웨어, 컴퓨터공학, 차세대 반도체 프로그램의 강의실과 연구실이 있어요. 가천대학교는 2024년에 세계 최초로 반도체대학을 만든 학교로 소개돼요. 식각, 증착, 평탄화 같은 공정을 실습하는 클린룸도 있고, 225제곱미터에서 360제곱미터로 넓혔어요.",
-        line: "Tour chỉ có một ảnh tòa này, nên đứng trên bản đồ mà xem. Tòa nhà này có phòng học và văn phòng nghiên cứu của các ngành AI và Phần mềm, Kỹ thuật máy tính và các chương trình bán dẫn thế hệ mới. Ngoài ra, Gachon được giới thiệu là trường đại học đầu tiên trên thế giới thành lập College of Semiconductors, năm 2024. Trường còn có phòng sạch thực hành các quy trình như khắc, lắng đọng và mài phẳng, được mở rộng từ 225 lên 360 m².",
-        en: "The tour has only one photo of this building, so look at it from the map. It has classrooms and research offices for AI and Software, Computer Engineering, and next-generation semiconductor programs. Gachon is also introduced as the first university in the world to establish a College of Semiconductors, in 2024. The school has a cleanroom for practice steps such as etching, deposition, and planarization, expanded from 225 to 360 square meters.",
+        ko: "인공지능과 소프트웨어, 컴퓨터공학, 차세대 반도체 프로그램의 강의실과 연구실이 있어요. 가천대학교는 2024년에 세계 최초로 반도체대학을 만든 학교로 소개돼요. 식각, 증착, 평탄화 같은 공정을 실습하는 클린룸도 있고, 225제곱미터에서 360제곱미터로 넓혔어요.",
+        line: "Tòa nhà này có phòng học và văn phòng nghiên cứu của các ngành AI và Phần mềm, Kỹ thuật máy tính và các chương trình bán dẫn thế hệ mới. Ngoài ra, Gachon được giới thiệu là trường đại học đầu tiên trên thế giới thành lập College of Semiconductors, năm 2024. Trường còn có phòng sạch thực hành các quy trình như khắc, lắng đọng và mài phẳng, được mở rộng từ 225 lên 360 m².",
+        en: "It has classrooms and research offices for AI and Software, Computer Engineering, and next-generation semiconductor programs. Gachon is also introduced as the first university in the world to establish a College of Semiconductors, in 2024. The school has a cleanroom for practice steps such as etching, deposition, and planarization, expanded from 225 to 360 square meters.",
         audio: "audio/r8-ai.wav",
         pitch: -18,
         flat: true
@@ -303,6 +339,14 @@
     const pinGroup = new THREE.Group()
     scene.add(pinGroup)
     const pinMeshes = []
+    const spotGroup = new THREE.Group()
+    scene.add(spotGroup)
+    const spotMeshes = []
+    let spotIcon = null
+    let audienceRole = ""
+    let pendingStart = "tour"
+    let lookMeter = { active: false, seconds: 0, lastYaw: 0, lastPitch: 0 }
+    let spotBusy = false
     let placeId = "overview"
     let aiPlane = null
     let caption = null
@@ -1180,6 +1224,141 @@
       return hits[0].object.userData.place
     }
 
+    function hitSpot(raycaster) {
+      if (!spotGroup.visible || !spotMeshes.length) return null
+      const hits = raycaster.intersectObjects(spotMeshes, false)
+      if (!hits.length) return null
+      return hits[0].object.userData.spot
+    }
+
+    function clearSpots() {
+      while (spotGroup.children.length) spotGroup.remove(spotGroup.children[0])
+      spotMeshes.length = 0
+      spotGroup.visible = false
+    }
+
+    function showSpots(placeId) {
+      clearSpots()
+      const list = SPOTS[placeId]
+      if (!list || !spotIcon) return
+      for (const spot of list) {
+        const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+          map: spotIcon,
+          transparent: true,
+          depthWrite: false
+        }))
+        sprite.position.copy(pinVector(spot.ath, spot.atv, 150))
+        sprite.scale.set(18, 18, 1)
+        sprite.userData.spot = spot
+        spotGroup.add(sprite)
+        spotMeshes.push(sprite)
+      }
+      spotGroup.visible = true
+    }
+
+    function closeSpotBox() {
+      document.querySelector("#spot-box").classList.remove("open")
+      spotBusy = false
+    }
+
+    async function openSpot(spot, token) {
+      if (!spot || spotBusy || token !== tourToken) return
+      spotBusy = true
+      const box = document.querySelector("#spot-box")
+      box.querySelector(".spot-title").textContent = spot.title
+      box.querySelector(".spot-line").textContent = spot.line
+      const photos = box.querySelector(".spot-photos")
+      photos.replaceChildren()
+      for (const src of spot.images) {
+        const img = document.createElement("img")
+        img.src = src
+        img.alt = spot.title
+        photos.appendChild(img)
+      }
+      box.classList.add("open")
+      const tour = tourBox()
+      showSpoken(tour, spot.line, spot.line)
+      const keepSkip = tourSkip
+      tourSkip = null
+      if (spot.audio) await speakClips([spot.audio], token)
+      tourSkip = keepSkip
+      closeSpotBox()
+    }
+
+    function waitLookAround(token, needSec) {
+      lookMeter = {
+        active: true,
+        seconds: 0,
+        lastYaw: rig.rotation.y,
+        lastPitch: camera.rotation.x
+      }
+      return new Promise((resolve) => {
+        let settled = false
+        const finish = () => {
+          if (settled) return
+          settled = true
+          lookMeter.active = false
+          resolve()
+        }
+        tourSkip = finish
+        const check = () => {
+          if (token !== tourToken || settled) return
+          if (lookMeter.seconds >= needSec) {
+            finish()
+            return
+          }
+          requestAnimationFrame(check)
+        }
+        requestAnimationFrame(check)
+      })
+    }
+
+    function updateLookMeter() {
+      if (!lookMeter.active) return
+      const yaw = rig.rotation.y
+      const pitch = camera.rotation.x
+      const moved = Math.abs(yaw - lookMeter.lastYaw) + Math.abs(pitch - lookMeter.lastPitch)
+      lookMeter.lastYaw = yaw
+      lookMeter.lastPitch = pitch
+      if (moved > 0.003) lookMeter.seconds += 1 / 60
+    }
+
+    async function exploreSpots(placeId, token) {
+      if (!SPOTS[placeId]) return
+      showSpots(placeId)
+      const box = tourBox()
+      const lang = voiceParts().lang
+      showSpoken(box, EXPLORE_LINE[lang] || EXPLORE_LINE.vi, EXPLORE_LINE.vi)
+      box.next.hidden = false
+      await new Promise((resolve) => {
+        let settled = false
+        const finish = () => {
+          if (settled) return
+          settled = true
+          clearSpots()
+          closeSpotBox()
+          resolve()
+        }
+        tourSkip = finish
+        box.next.onclick = finish
+      })
+    }
+
+    async function speakMuhan(token) {
+      const role = audienceRole === "parent" ? "parent" : "student"
+      const line = MUHAN_LINE[role]
+      const audio = role === "parent" ? "audio/muhan-parent.wav" : "audio/muhan-student.wav"
+      const node = document.querySelector("#tour-muhan")
+      const tour = tourBox()
+      hidePrize()
+      if (resultFx) resultFx.visible = false
+      showSpoken(tour, line, line)
+      node.classList.add("open")
+      node.classList.add("talking")
+      await speakClips([audio], token)
+      node.classList.remove("talking")
+    }
+
     function hitChoice(raycaster) {
       if (!vrBoard || !vrBoard.visible) return null
       const hits = raycaster.intersectObjects(vrChoices.filter((mesh) => mesh.visible), false)
@@ -1198,8 +1377,12 @@
           const button = hitChoice(ray)
           if (button && !button.disabled) button.click()
           else {
-            const id = hitPin(ray)
-            if (id) selectPlace(id)
+            const spot = hitSpot(ray)
+            if (spot) openSpot(spot, tourToken)
+            else {
+              const id = hitPin(ray)
+              if (id) selectPlace(id)
+            }
           }
         }
       }
@@ -1257,8 +1440,12 @@
       )
       const raycaster = new THREE.Raycaster()
       raycaster.setFromCamera(ndc, camera)
-      const id = hitPin(raycaster)
-      if (id) selectPlace(id)
+      const spot = hitSpot(raycaster)
+      if (spot) openSpot(spot, tourToken)
+      else {
+        const id = hitPin(raycaster)
+        if (id) selectPlace(id)
+      }
       drag = null
     }
 
@@ -1278,6 +1465,7 @@
         captionTimer -= 1 / 72
         if (captionTimer <= 0) caption.visible = false
       }
+      updateLookMeter()
       updateMascot()
       syncVrBoard()
       updateResultFx()
@@ -1295,6 +1483,91 @@
     window.addEventListener("keydown", onKey)
     window.addEventListener("resize", onResize)
     const EIGHT_POINT = { fountain: 1, vision: 2, "10": 3, "09": 4, "08": 4, maker: 5, ai: 6, "14": 7, "12": 8 }
+    const SPOTS = {
+      "10": [
+        {
+          id: "lagom",
+          title: "Lagom (Study Café Lounge)",
+          ath: -104.84,
+          atv: 0.469,
+          images: ["img/spots/10-1.1.jpg", "img/spots/10-1.2.jpg", "img/spots/10-1.3.jpg"],
+          line: "Đây là Lagom, khu lounge học tập kiểu quán cà phê. Không gian nhiều ánh sáng tự nhiên, có sofa rộng và bàn cao, rất hợp để sinh viên ngồi học nhóm hoặc nghỉ giữa các tiết. Ngoài ra Gachon Hall còn có quán cà phê ở tầng 2 và các phòng đọc, nên con sinh viên chỗ học và sinh hoạt mà không phải đi xa.",
+          audio: "audio/spot-lagom.wav"
+        },
+        {
+          id: "gym",
+          title: "Gym",
+          ath: -92.2,
+          atv: 1.025,
+          images: ["img/spots/10-2.1.jpg", "img/spots/10-2.2.jpg", "img/spots/10-2.3.jpg"],
+          line: "Phòng gym trong khuôn viên có giàn tạ, máy tập cáp, máy chạy bộ, sàn đệm và gương. Sau giờ học, con có thể tập luyện ngay trong trường.",
+          audio: "audio/spot-gym.wav"
+        }
+      ],
+      "14": [
+        {
+          id: "exam",
+          title: "Gachon Exam Prep Hall",
+          ath: -48.322,
+          atv: 3.845,
+          images: ["img/spots/14-1.1.jpg", "img/spots/14-1.2.jpg"],
+          line: "Đây là khu phòng học riêng dành cho việc ôn thi. Hành lang dài với nhiều phòng ngăn bằng kính mờ, mỗi phòng đánh số riêng, tạo không gian yên tĩnh để con tập trung học khi đến kỳ thi.",
+          audio: "audio/spot-exam.wav"
+        },
+        {
+          id: "dorm",
+          title: "Dormitory",
+          ath: 72.459,
+          atv: 1.4,
+          images: ["img/spots/14-2.1.jpg", "img/spots/14-2.2.jpg", "img/spots/14-2.3.jpg"],
+          line: "Đây là phòng ký túc xá 2 người. Mỗi bạn có giường đơn, tủ quần áo riêng, bàn học và kệ sách cạnh cửa sổ rất sáng, phòng có khu vệ sinh và vòi sen ngay trong phòng. Khu ký túc xá nằm phía trên của campus, nơi có ký túc xá số 1, số 2 và cũng là vị trí của AI Building cùng ký túc xá số 3, dưới chân núi Yeongjangsan, nên môi trường yên tĩnh và gần khu học chuyên ngành.",
+          audio: "audio/spot-dorm.wav"
+        }
+      ],
+      "12": [
+        {
+          id: "eureka",
+          title: "Eureka",
+          ath: 139.99,
+          atv: -18.466,
+          images: ["img/spots/12-1.1.jpg", "img/spots/12-1.2.jpg", "img/spots/12-1.3.jpg"],
+          line: "Đây là không gian học nhóm và thảo luận. Có bàn tròn, ghế bành, bảng trắng và các phòng kính để nhóm họp riêng. Sinh viên có thể làm bài tập nhóm hoặc trao đổi ý tưởng ngay trong khu thư viện.",
+          audio: "audio/spot-eureka.wav"
+        },
+        {
+          id: "stacks",
+          title: "Stacks",
+          ath: 13.926,
+          atv: 1.777,
+          images: ["img/spots/12-3.1.jpg", "img/spots/12-3.2.jpg", "img/spots/12-3.3.jpg"],
+          line: "Đây là khu kệ sách với dãy kệ dài và các bàn đọc có đèn riêng, cửa sổ lớn nên nhiều ánh sáng tự nhiên. Sinh viên vừa tìm tài liệu vừa ngồi học ngay tại chỗ.",
+          audio: "audio/spot-stacks.wav"
+        },
+        {
+          id: "reading",
+          title: "Reading Room",
+          ath: -76.177,
+          atv: -32.556,
+          images: ["img/spots/12-2.1.jpg", "img/spots/12-2.2.jpg", "img/spots/12-2.3.jpg"],
+          line: "Đây là phòng đọc với các chỗ ngồi có vách ngăn riêng, giúp con tập trung học và ôn thi. Gachon có ứng dụng thư viện cho phép xem tình trạng chỗ ngồi, đặt chỗ và đặt phòng học nhóm bằng điện thoại. Từ ký túc xá đến thư viện đi bộ khoảng 7 phút.",
+          audio: "audio/spot-reading.wav"
+        }
+      ]
+    }
+    const MUHAN_LINE = {
+      parent: "Cảm ơn Quý phụ huynh đã cùng con đến trải nghiệm không gian học tập của trường Đại học Gachon. Em hy vọng chuyến tham quan đã giúp Quý phụ huynh hình dung rõ hơn về môi trường con sẽ học và sinh hoạt tại Hàn Quốc. Em hiểu chọn nơi học cho con là quyết định lớn của cả gia đình. Em chúc Quý phụ huynh luôn vững tin đồng hành cùng con, và chúc gia đình mình tìm được lựa chọn thật phù hợp cho con.",
+      student: "Cảm ơn bạn đã cùng khám phá campus. Hy vọng chuyến tham quan đã giúp bạn hình dung rõ hơn về không gian học tập và cuộc sống tại trường Đại học Gachon Hàn Quốc. Muhan chúc bạn luôn giữ được sự tò mò, dám thử và dám hỏi, vì ngành Bán dẫn rất cần những bạn như vậy. Dù sau này bạn chọn con đường nào, Muhan mong bạn sẽ học thật vui và luôn có thật nhiều niềm tin vào bản thân."
+    }
+    const LOOK_LINE = {
+      ko: "주위를 둘러보세요.",
+      vi: "Hãy quay nhìn xung quanh để thấy không gian 3D nhé.",
+      en: "Look around to see the 3D space."
+    }
+    const EXPLORE_LINE = {
+      ko: "돋보기를 눌러 더 둘러보세요.",
+      vi: "Chọn kính lúp để tham quan thêm, hoặc bấm Tiếp.",
+      en: "Tap the magnifier to explore more, or press Next."
+    }
     const EIGHT_QUIZ = [
       {
         q: "Ga Gachon University thuộc tuyến nào?",
@@ -1433,31 +1706,31 @@
         name: "8 điểm",
         stops: ["fountain", "vision", "10", "09", "08", "maker", "ai", "14", "12"],
         questions: EIGHT_QUIZ,
-        voice: "ko-f"
+        voice: "vi-f"
       },
       {
         name: "Sân trường",
         stops: ["overview", "vision", "08", "09", "11", "19"],
         quiz: [0, 1, 2, 4, 5],
-        voice: "ko-f"
+        voice: "vi-f"
       },
       {
         name: "Chỗ học",
         stops: ["overview", "maker", "ai", "05", "06", "07", "10", "12"],
         quiz: [2, 3, 7, 8, 9],
-        voice: "ko-f"
+        voice: "vi-f"
       },
       {
         name: "Ký túc",
         stops: ["overview", "fountain", "13", "14", "16"],
         quiz: [1, 3, 6, 9],
-        voice: "ko-f"
+        voice: "vi-f"
       },
       {
         name: "Y và xưởng",
         stops: ["vision", "fountain", "maker", "15", "18", "20", "21", "22", "23", "24"],
         quiz: [4, 5, 6, 8],
-        voice: "ko-f"
+        voice: "vi-f"
       }
     ]
     let routeIndex = 0
@@ -1474,7 +1747,7 @@
     }
 
     function voiceParts() {
-      const voice = ROUTES[routeIndex].voice || "ko-f"
+      const voice = ROUTES[routeIndex].voice || "vi-f"
       const bits = voice.split("-")
       return { lang: bits[0] || "ko", male: bits[1] === "m" }
     }
@@ -1505,15 +1778,20 @@
         "en-f": ["img/en-f.jpg", "Người nữ"],
         "en-m": ["img/en-m.jpg", "Người nam"]
       }
-      const pick = files[id] || files["ko-f"]
+      const pick = files[id] || files["vi-f"]
       const img = document.querySelector("#tour-speaker img")
       img.src = pick[0]
       img.alt = pick[1]
     }
 
     function showSpoken(box, spoken, vi) {
-      box.ko.textContent = spoken === vi ? "" : spoken
-      box.text.textContent = vi
+      if (voiceParts().lang === "ko") {
+        box.ko.textContent = spoken
+        box.text.textContent = vi
+        return
+      }
+      box.ko.textContent = ""
+      box.text.textContent = spoken || vi
     }
 
     function routePlace(id) {
@@ -1685,11 +1963,9 @@
         text: document.querySelector("#tour-text"),
         score: document.querySelector("#tour-score"),
         choices: document.querySelector("#tour-choices"),
-        mic: document.querySelector("#tour-mic"),
         next: document.querySelector("#tour-next"),
         home: document.querySelector("#tour-home"),
-        again: document.querySelector("#tour-again"),
-        heard: document.querySelector("#tour-heard")
+        again: document.querySelector("#tour-again")
       }
     }
 
@@ -1710,6 +1986,9 @@
       }
       const speaker = document.querySelector("#tour-speaker")
       if (speaker) speaker.classList.remove("talking")
+      document.querySelector("#tour-muhan").classList.remove("open", "talking")
+      clearSpots()
+      closeSpotBox()
       if (resultFx) resultFx.visible = false
       voiceOn = false
       hidePrize()
@@ -1720,11 +1999,9 @@
       box.text.textContent = ""
       box.progress.textContent = ""
       box.choices.replaceChildren()
-      box.mic.hidden = true
       box.next.hidden = true
       box.home.hidden = true
       box.again.hidden = true
-      box.heard.textContent = ""
       box.score.textContent = ""
       setTouring(false)
       document.querySelector("#start-tour").textContent = "Bắt đầu"
@@ -1785,71 +2062,21 @@
       }))
     }
 
-    function letterFrom(text) {
-      const heard = fold(text).replace(/[.,!?]/g, " ").replace(/\s+/g, " ").trim()
-      const stripped = heard.replace(/^(dap an|phuong an|chon|cau)\s+/, "")
-      if (stripped === "a" || stripped === "b" || stripped === "c") return stripped
-      return ""
-    }
-
-    function gradeSpeech(text, choices) {
-      const spoken = letterFrom(text)
-      if (spoken) return spoken.toUpperCase()
-      const heard = fold(text)
-      let best = null
-      for (const choice of choices) {
-        const phrases = [fold(choice.text), ...choice.say]
-        for (const phrase of phrases) {
-          if (phrase && heard.includes(phrase) && (!best || phrase.length > best.length)) best = { letter: choice.letter, length: phrase.length }
-        }
-      }
-      return best ? best.letter : ""
-    }
-
     function showChoices(round, token) {
       if (resultFx) resultFx.visible = false
       const box = tourBox()
       box.choices.replaceChildren()
-      box.mic.hidden = false
       box.next.hidden = true
       for (const choice of round.choices) {
         const button = document.createElement("button")
         button.type = "button"
         const spoken = optionSpoken(choice)
-        button.textContent = spoken === choice.text ? choice.letter + ". " + choice.text : choice.letter + ". " + spoken + " — " + choice.text
+        button.textContent = voiceParts().lang === "ko"
+          ? choice.letter + ". " + spoken + " — " + choice.text
+          : choice.letter + ". " + spoken
         button.addEventListener("click", () => gradeRound(round, choice.letter, token))
         box.choices.appendChild(button)
       }
-      box.mic.onclick = () => listenAnswer(round, token)
-    }
-
-    function listenAnswer(round, token) {
-      const Rec = window.SpeechRecognition || window.webkitSpeechRecognition
-      const box = tourBox()
-      if (!Rec) {
-        box.heard.textContent = "Trình duyệt này không có nhận giọng. Bấm A, B hoặc C."
-        return
-      }
-      const rec = new Rec()
-      rec.lang = "vi-VN"
-      rec.interimResults = false
-      rec.maxAlternatives = 1
-      box.mic.textContent = "Đang nghe…"
-      rec.onresult = (event) => {
-        if (token !== tourToken) return
-        const text = event.results[0][0].transcript
-        const letter = gradeSpeech(text, round.choices)
-        box.heard.textContent = letter ? "Bạn nói: " + text : "Bạn nói: " + text + ". Chọn A, B hoặc C."
-        if (!letter) speakFiles(["audio/choose.wav"])
-        if (letter) gradeRound(round, letter, token)
-      }
-      rec.onerror = (event) => {
-        box.heard.textContent = "Micro: " + event.error
-      }
-      rec.onend = () => {
-        box.mic.textContent = "Nói đáp án"
-      }
-      rec.start()
     }
 
     async function gradeRound(round, letter, token) {
@@ -1860,11 +2087,7 @@
       const hit = !!(picked && picked.correct)
       if (hit) round.score = 1
       playResultFx(hit)
-      const lang = voiceParts().lang
-      const answer = optionSpoken(round.correct)
-      box.heard.textContent = hit ? (lang === "ko" ? "맞아요." : lang === "en" ? "That's right." : "Đúng rồi.") : (lang === "ko" ? "정답은 " + answer + "." : lang === "en" ? "The right answer is " + answer + "." : "Đáp án đúng là " + answer + ".")
       for (const button of box.choices.querySelectorAll("button")) button.disabled = true
-      box.mic.hidden = true
       box.next.hidden = false
       let moved = false
       const moveOn = () => {
@@ -1910,7 +2133,6 @@
         }
         box.score.textContent = "Câu " + (index + 1) + "/" + items.length + ". Đúng " + correct + "."
         showSpoken(box, questionSpoken(item), item.q)
-        box.heard.textContent = ""
         showChoices(round, token)
         const files = ["audio/num-" + (index + 1) + ".wav", item.qAudio]
         for (const choice of choices) files.push("audio/letter-" + choice.letter.toLowerCase() + ".wav", choice.audio)
@@ -1926,10 +2148,8 @@
       }
       if (token !== tourToken) return
       box.choices.replaceChildren()
-      box.mic.hidden = true
       box.next.hidden = true
       box.home.hidden = false
-      box.heard.textContent = ""
       if (ROUTES[routeIndex].questions) {
         const won = correct >= 3
         const lang = voiceParts().lang
@@ -1939,14 +2159,24 @@
         showPrize(won)
         playEndFx(won)
         await speakClips(["audio/r8-score-" + correct + ".wav", won ? "audio/r8-prize.wav" : "audio/r8-regret.wav"], token)
+        if (token !== tourToken) return
+        await speakMuhan(token)
         return
       }
       hidePrize()
       if (resultFx) resultFx.visible = false
-      box.ko.textContent = SCORE_KO[correct]
       box.score.textContent = "Bạn đúng " + correct + "/4."
-      box.text.textContent = recap.join(" ") + " PR chọn mốc quà: từ 3/4, hoặc chỉ 4/4."
+      const oldLine = recap.join(" ") + " PR chọn mốc quà: từ 3/4, hoặc chỉ 4/4."
+      if (voiceParts().lang === "ko") {
+        box.ko.textContent = SCORE_KO[correct]
+        box.text.textContent = oldLine
+      } else {
+        box.ko.textContent = ""
+        box.text.textContent = oldLine
+      }
       await speakClips(["audio/score-" + correct + ".wav"], token)
+      if (token !== tourToken) return
+      await speakMuhan(token)
     }
 
     function holdScene(token, ms) {
@@ -1969,31 +2199,54 @@
       voiceOn = true
       setSpeaker()
       hidePrize()
+      document.querySelector("#tour-muhan").classList.remove("open", "talking")
       if (resultFx) resultFx.visible = false
       speakToken += 1
       quizBusy = false
+      clearSpots()
+      closeSpotBox()
       if (playing) {
         playing.onended = null
         playing.pause()
       }
       document.querySelector("#route").classList.remove("open")
       document.querySelector("#lab").classList.remove("open")
+      document.querySelector("#audience").classList.remove("open")
       const box = tourBox()
       box.root.classList.add("open")
-      box.mic.hidden = true
       box.home.hidden = false
       box.again.hidden = false
       box.score.textContent = ""
       box.progress.textContent = ROUTES[routeIndex].name
-      box.heard.textContent = ""
       setTouring(true)
       document.querySelector("#start-tour").textContent = "Làm lại"
       const stops = ROUTES[routeIndex].stops
+      await goTo("overview")
+      box.progress.textContent = "Nhìn quanh"
+      showSpoken(box, LOOK_LINE[voiceParts().lang] || LOOK_LINE.vi, LOOK_LINE.vi)
+      box.choices.replaceChildren()
+      box.next.hidden = false
+      box.next.onclick = () => {
+        if (tourSkip) tourSkip()
+      }
+      await speakClips(["audio/look-around.wav"], token)
+      if (token !== tourToken) return
+      await new Promise((resolve) => {
+        let settled = false
+        const finish = () => {
+          if (settled) return
+          settled = true
+          resolve()
+        }
+        tourSkip = finish
+      })
+      if (token !== tourToken) return
       for (let index = 0; index < stops.length; index += 1) {
         if (token !== tourToken) return
         const id = stops[index]
         const place = routePlace(id)
         await goTo(id)
+        clearSpots()
         box.root.classList.add("open")
         const point = EIGHT_POINT[id] || (index + 1)
         box.progress.textContent = ROUTES[routeIndex].questions
@@ -2001,7 +2254,6 @@
           : place.title + " · cảnh " + (index + 1) + "/" + stops.length
         showSpoken(box, placeSpoken(place), place.line)
         box.choices.replaceChildren()
-        box.mic.hidden = true
         box.next.hidden = false
         box.home.hidden = false
         let skipped = false
@@ -2011,7 +2263,12 @@
         }
         if (place.audio) await speakClips([place.audio], token)
         if (token !== tourToken) return
-        if (!skipped) await holdScene(token, 15000)
+        if (!skipped && ROUTES[routeIndex].questions && SPOTS[id]) {
+          await exploreSpots(id, token)
+          if (token !== tourToken) return
+        } else if (!skipped) {
+          await holdScene(token, 15000)
+        }
       }
       if (token !== tourToken) return
       await askRounds(token)
@@ -2023,6 +2280,7 @@
       voiceOn = true
       setSpeaker()
       hidePrize()
+      document.querySelector("#tour-muhan").classList.remove("open", "talking")
       if (resultFx) resultFx.visible = false
       speakToken += 1
       quizBusy = false
@@ -2033,12 +2291,10 @@
       document.querySelector("#lab").classList.remove("open")
       const box = tourBox()
       box.root.classList.add("open")
-      box.mic.hidden = true
       box.home.hidden = false
       box.again.hidden = false
       box.score.textContent = ""
       box.progress.textContent = ROUTES[routeIndex].name
-      box.heard.textContent = ""
       box.choices.replaceChildren()
       setTouring(true)
       document.querySelector("#start-tour").textContent = "Làm lại"
@@ -2112,7 +2368,7 @@
       quiz.type = "button"
       quiz.className = "quiz"
       quiz.textContent = "Câu hỏi của lộ trình này"
-      quiz.addEventListener("click", startQuizOnly)
+      quiz.addEventListener("click", beginQuiz)
       list.appendChild(quiz)
     }
 
@@ -2122,9 +2378,39 @@
     document.querySelector("#open-route").addEventListener("click", () => {
       document.querySelector("#route").classList.toggle("open")
     })
-    document.querySelector("#start-tour").addEventListener("click", startGuided)
+    function beginTour() {
+      pendingStart = "tour"
+      if (!audienceRole) {
+        document.querySelector("#audience").classList.add("open")
+        return
+      }
+      startGuided()
+    }
+
+    function beginQuiz() {
+      pendingStart = "quiz"
+      if (!audienceRole) {
+        document.querySelector("#audience").classList.add("open")
+        return
+      }
+      startQuizOnly()
+    }
+
+    document.querySelector("#start-tour").addEventListener("click", beginTour)
     document.querySelector("#tour-home").addEventListener("click", returnOverview)
-    document.querySelector("#tour-again").addEventListener("click", startGuided)
+    document.querySelector("#tour-again").addEventListener("click", beginTour)
+    document.querySelector("#spot-box .spot-close").addEventListener("click", closeSpotBox)
+    for (const button of document.querySelectorAll("#audience .roles button")) {
+      button.addEventListener("click", () => {
+        audienceRole = button.dataset.role
+        for (const item of document.querySelectorAll("#audience .roles button")) {
+          item.classList.toggle("on", item === button)
+        }
+        document.querySelector("#audience").classList.remove("open")
+        if (pendingStart === "quiz") startQuizOnly()
+        else startGuided()
+      })
+    }
     fillRoute()
     document.querySelector("#mic").addEventListener("click", listenVietnamese)
     primeLabAudio()
@@ -2136,6 +2422,7 @@
     makeResultFx()
     addController(0)
     addController(1)
+    spotIcon = await loadTexture("./img/zoom_blue.png")
     mascotMaps.stand = await loadTexture("./img/moohan.png")
     mascotMaps.point = await loadTexture("./img/moohan-point.png")
     mascotMaps.pointLeft = await loadTexture("./img/moohan-point-left.png")
